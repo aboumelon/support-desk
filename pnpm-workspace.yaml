@@ -1,0 +1,6 @@
+packages:
+  - apps/web
+  - packages/*
+allowBuilds:
+  esbuild: true
+storeDir: /tmp/supportdesk-pnpm-store

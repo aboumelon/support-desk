@@ -1,0 +1,40 @@
+name: verify
+on: [push, pull_request]
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.0-pg17
+        env:
+          POSTGRES_USER: supportdesk
+          POSTGRES_PASSWORD: local-development-only
+          POSTGRES_DB: supportdesk_test
+        ports: ['55432:5432']
+        options: --health-cmd "pg_isready -U supportdesk" --health-interval 2s --health-retries 30
+      redis:
+        image: redis:8.0.2-alpine
+        ports: ['56379:6379']
+    env:
+      DATABASE_URL: postgresql+psycopg://supportdesk:local-development-only@localhost:55432/supportdesk_test
+      UV_CACHE_DIR: /tmp/supportdesk-uv-cache
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: '0.12.1'
+          python-version: '3.13'
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.18.1'
+      - run: uv sync --project apps/backend --locked --all-extras
+      - run: uv run ruff format --check . && uv run ruff check . && uv run mypy src
+        working-directory: apps/backend
+      - run: uv run --all-extras python -m supportdesk.cli.provision_embeddings
+        working-directory: apps/backend
+      - run: uv run --all-extras alembic upgrade head && uv run alembic check && uv run --all-extras pytest -q
+        working-directory: apps/backend
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm contracts:check
+      - run: pnpm lint && pnpm typecheck && pnpm --filter @supportdesk/web test && pnpm build

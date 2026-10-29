@@ -1,0 +1,58 @@
+name: supportdesk-production
+x-backend: &backend
+  build:
+    context: ..
+    dockerfile: apps/backend/Dockerfile
+    target: base
+  env_file: ../.env.production
+  environment:
+    DATABASE_URL: ${RUNTIME_DATABASE_URL:?Set the restricted runtime PostgreSQL URL}
+    REDIS_URL: redis://redis:6379/0
+    STORAGE_ROOT: /var/lib/supportdesk/files
+    MODEL_CACHE: /var/lib/supportdesk/models
+  volumes: [files:/var/lib/supportdesk/files, models:/var/lib/supportdesk/models]
+  restart: unless-stopped
+services:
+  gateway:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    ports: ['127.0.0.1:8080:8080']
+    restart: unless-stopped
+  api:
+    <<: *backend
+  dispatcher:
+    <<: *backend
+    command: [python, -m, supportdesk.workers.dispatcher]
+  worker:
+    <<: *backend
+    build:
+      context: ..
+      dockerfile: apps/backend/Dockerfile
+      target: worker
+    command: [celery, -A, 'supportdesk.workers.celery_app:app', worker, -Q, 'ai,ingestion', '--concurrency=1']
+  migrate:
+    <<: *backend
+    profiles: [maintenance]
+    restart: 'no'
+    environment:
+      DATABASE_URL: ${MIGRATION_DATABASE_URL:?Set the migration owner PostgreSQL URL}
+    command: [alembic, upgrade, head]
+  postgres:
+    image: pgvector/pgvector:0.8.0-pg17@sha256:40b404964359299eefdd5f8518facf1886c562848cf4de13b6eaf91cb70c2b87
+    environment:
+      POSTGRES_USER: supportdesk_owner
+      POSTGRES_DB: supportdesk
+      POSTGRES_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?Set the database owner password}
+    volumes: [database:/var/lib/postgresql/data]
+    restart: unless-stopped
+  redis:
+    image: redis:8.0.2-alpine@sha256:48501c5ad00d5563bc30c075c7bcef41d7d98de3e9a1e6c752068c66f0a8463b
+    command: [redis-server, --appendonly, 'yes', --maxmemory-policy, noeviction]
+    volumes: [redis:/data]
+    restart: unless-stopped
+volumes:
+  database:
+  redis:
+  files:
+  models:

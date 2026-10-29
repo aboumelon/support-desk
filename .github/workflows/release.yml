@@ -1,0 +1,12 @@
+name: release-build
+on:
+  workflow_dispatch:
+jobs:
+  containers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build --target base -f apps/backend/Dockerfile -t supportdesk-api:${{ github.sha }} .
+      - run: docker build --target worker -f apps/backend/Dockerfile -t supportdesk-worker:${{ github.sha }} .
+      - run: docker build -f apps/web/Dockerfile -t supportdesk-gateway:${{ github.sha }} .
+      - run: docker run --rm supportdesk-api:${{ github.sha }} python -c 'from supportdesk.main import create_app; assert create_app().title == "SupportDesk"'
