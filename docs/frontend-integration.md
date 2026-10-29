@@ -1,6 +1,6 @@
 # Tarvio frontend integration
 
-Status: connected implementation verified locally; final container evidence is being recorded.
+Status: connected implementation, local browser workflows and container assets verified.
 Source archive: `/home/armin/Downloads/Tarvio Support Workspace Prototype (1).zip`.
 SHA-256: `acd8125df385d0ed1023d778946b5807bddaf982d3322360acf3c3b5b854a8c4`.
 Reference extracted under ignored `.local/references/tarvio-latest/`. Its configuration,
@@ -86,6 +86,24 @@ One chained verification command ended with SIGTERM after pytest and Ruff had pa
 A subsequent root-directory mypy invocation did not load the backend configuration
 and reported an untyped Celery import; it was stopped and rerun successfully from
 `apps/backend` using the documented command above.
+
+The source checkpoint is `89a062f0e0507f031ad973193d867b3462c078d9` on the local
+`codex/tarvio-frontend` branch. Container build and inspection passed:
+
+```bash
+docker build --label org.opencontainers.image.revision=89a062f0e0507f031ad973193d867b3462c078d9 -f apps/web/Dockerfile -t supportdesk-gateway:tarvio .
+docker run --rm --network none --entrypoint caddy supportdesk-gateway:tarvio validate --config /etc/caddy/Caddyfile --adapter caddyfile
+```
+
+Image ID: `sha256:b35a9df1f5f620b304cbe51c2642f045a188773859e87a46d964fc7be5439342`.
+A temporary container bound only to `127.0.0.1:5181` served a direct SPA route and
+the local Persian WOFF2 font byte-for-byte equal to the production build; both font
+licenses, brand SVG and absence of Google Fonts CSS URLs were checked inside the image.
+The container was removed afterward. The first HTTP probe raced startup and reset;
+retrying with bounded readiness retries passed. Caddy's existing indentation warning
+is nonfatal; its configuration validated. Backend proxy/realtime configuration is unchanged.
+This is a local asset check, not a public deployment or a full container-stack release.
+Machine-readable hashes and verification boundaries: [tarvio.json](evidence/tarvio.json).
 
 Production build uses local font assets and license files and emits an approximately
 415 KiB main JavaScript chunk, with auth, knowledge and conversation code split out.

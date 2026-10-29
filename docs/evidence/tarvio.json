@@ -1,0 +1,240 @@
+{
+  "recorded_at": "2026-10-29T14:19:57.349342+00:00",
+  "source_revision": "89a062f0e0507f031ad973193d867b3462c078d9",
+  "branch": "codex/tarvio-frontend",
+  "design_archive": {
+    "filename": "Tarvio Support Workspace Prototype (1).zip",
+    "sha256": "acd8125df385d0ed1023d778946b5807bddaf982d3322360acf3c3b5b854a8c4",
+    "isolated_reference": ".local/references/tarvio-latest",
+    "configuration_and_instructions_adopted": false
+  },
+  "file_hashes": {
+    "supportdesk-system-design-v1.md": "0486455a90a4b0c61953d4261506fc474c2b888710ce8262c074ec567f4cd4e5",
+    "pnpm-lock.yaml": "ce13cb37ffcf671a885a72097efbe987aa8a1c773166e10caea0e5088bcd52f1",
+    "apps/backend/uv.lock": "208e89cb78e94fd12cdb1408d21b280cfafa100ce74688866971399deb863e40",
+    "apps/web/public/fonts/Estedad-LICENSE.txt": "e0ef57154d4ecbe3b5fb27dd9c1ef1fc057a9d70cda84692dfad68586d204409",
+    "apps/web/public/fonts/Inter-LICENSE.txt": "3b0a5fca3d17942cde889069889dedbbbd075e9b599968c82a95f4d944e9b345"
+  },
+  "image": {
+    "tag": "supportdesk-gateway:tarvio",
+    "id": "sha256:b35a9df1f5f620b304cbe51c2642f045a188773859e87a46d964fc7be5439342",
+    "revision": "89a062f0e0507f031ad973193d867b3462c078d9",
+    "size_bytes": 84751821
+  },
+  "checks": [
+    {
+      "command": "pnpm lint",
+      "outcome": "passed"
+    },
+    {
+      "command": "pnpm typecheck",
+      "outcome": "passed"
+    },
+    {
+      "command": "pnpm exec prettier --check apps/web/src apps/web/e2e apps/web/index.html apps/web/package.json",
+      "outcome": "passed"
+    },
+    {
+      "command": "pnpm --filter @supportdesk/web test",
+      "outcome": "passed",
+      "tests": 7
+    },
+    {
+      "command": "pnpm contracts:check",
+      "outcome": "passed; no generated-contract drift"
+    },
+    {
+      "command": "pnpm build",
+      "outcome": "passed; two upstream Zod annotation warnings",
+      "vite": "7.3.7",
+      "main_chunk_kb_decimal": 414.88
+    },
+    {
+      "command": "FAKE_SCENARIO=slow bash scripts/start-local.sh && pnpm --filter @supportdesk/web test:e2e",
+      "outcome": "passed",
+      "tests": 5,
+      "reported_duration": "1.4m"
+    },
+    {
+      "command": "UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked --project apps/backend --all-extras pytest -q apps/backend/tests",
+      "outcome": "passed",
+      "tests": 42,
+      "duration_seconds": 136.93,
+      "database": "dedicated PostgreSQL supportdesk_test",
+      "redis_database": 15
+    },
+    {
+      "command": "UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked --project apps/backend ruff format --check apps/backend",
+      "outcome": "passed",
+      "files": 79
+    },
+    {
+      "command": "UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked --project apps/backend ruff check apps/backend",
+      "outcome": "passed"
+    },
+    {
+      "cwd": "apps/backend",
+      "command": "UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked mypy src",
+      "outcome": "passed",
+      "files": 54
+    },
+    {
+      "command": "docker build --label org.opencontainers.image.revision=89a062f0e0507f031ad973193d867b3462c078d9 -f apps/web/Dockerfile -t supportdesk-gateway:tarvio .",
+      "outcome": "passed"
+    },
+    {
+      "command": "docker run --rm --network none --entrypoint caddy supportdesk-gateway:tarvio validate --config /etc/caddy/Caddyfile --adapter caddyfile",
+      "outcome": "passed; existing indentation warning"
+    },
+    {
+      "command": "Temporary loopback container HTTP GET /app/verification/inbox and local Estedad Arabic WOFF2; byte comparisons to dist",
+      "outcome": "passed after bounded readiness retries; container removed"
+    },
+    {
+      "command": "bash scripts/start-local.sh",
+      "outcome": "ordinary local runtime restored; API readiness schema 0007 / Redis ok / explicit fake provider; frontend HTTP 200"
+    }
+  ],
+  "screenshots": [
+    {
+      "path": "docs/evidence/tarvio/customer-1024.png",
+      "sha256": "b9e44a8c4566c6606923603a15d6def03e0aa216f1eadd34ac226e85d851a925",
+      "width": 1024,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/tarvio/customer-1440.png",
+      "sha256": "4a324a35fd15a67b80c0a50b9ce8c743c00d985623bb6d9a3602667b4130a9b0",
+      "width": 1440,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/tarvio/customer-390.png",
+      "sha256": "567ded4bb977fa5aa68d118965517750338370ca548ed6965250428291419ac1",
+      "width": 390,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/tarvio/customer-768.png",
+      "sha256": "d69a0f007e65d5c63dd593666985c774155cd1b39a574424ee9a515f1ec1a6e3",
+      "width": 768,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/tarvio/entry-1440.png",
+      "sha256": "0d804c4fd1581baa2be8053dd488e11a6990f881717a103c121d430e7ac2c7a7",
+      "width": 1440,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/tarvio/entry-390.png",
+      "sha256": "2a3bd6669f2d006921975d5c734be8541e27ba43fc313f3a94519c2af1404b8e",
+      "width": 390,
+      "height": 1118
+    },
+    {
+      "path": "docs/evidence/tarvio/knowledge-1024.png",
+      "sha256": "036fedb7e310dd62d1dddd242ea9887dc946f0cc45b730e65d1fb15704bd826c",
+      "width": 1024,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/tarvio/knowledge-1440.png",
+      "sha256": "3c36733bf4d05a4d20976993083c95e9edfb3b7493dfd525906a9835d627707f",
+      "width": 1440,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/tarvio/knowledge-390.png",
+      "sha256": "6af04b61b55643447d92bf4ded05fde5fd737fa7173c5e08015bad4a9935a639",
+      "width": 390,
+      "height": 1799
+    },
+    {
+      "path": "docs/evidence/tarvio/knowledge-768.png",
+      "sha256": "79845bbf3fb42c188fddd7617d82b61be38f6813771320e1fb2ba9e404aa2436",
+      "width": 768,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/tarvio/login-1440.png",
+      "sha256": "ed5e9dc23dea27d0a630d0b7a724f5872b2e172f638a9948d7aa7af949ce04f1",
+      "width": 1440,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/tarvio/login-390.png",
+      "sha256": "20b8034a68e73dba4eb52efb05d920caa61b39a0af846cdc045c27c57a349d24",
+      "width": 390,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/tarvio/operator-1024.png",
+      "sha256": "70607dbf3bdba00a689c57161c4eb123d2acb9a9609cb10a7631e48444ab43f6",
+      "width": 1024,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/tarvio/operator-1440.png",
+      "sha256": "3feb60fad27a4e8b3e2ee2c4d09767bf3daa07b94cc11c22b1f4d2b6dcb3e913",
+      "width": 1440,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/tarvio/operator-390.png",
+      "sha256": "878cc03851a8929a1e80aa38b203f2ed5cffb9bde3dc14c7f78ecb515b16ee19",
+      "width": 390,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/tarvio/operator-768.png",
+      "sha256": "ade1aa20d4ca7b29bdfb2a1b80b9c0b9cfef01df0a26f4099d34cf5549ec0da5",
+      "width": 768,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/tarvio/source-1024.png",
+      "sha256": "8f6aa0a68c483ff523cacd12f022f3ff74bab7e6d47cc582f0a5a05142d9160a",
+      "width": 1024,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/tarvio/source-390.png",
+      "sha256": "4959bb4051baf18c3650f24ae72fe4236c53dc810f62f08c6f81448c9935b871",
+      "width": 390,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/tarvio/source-768.png",
+      "sha256": "501c984aeca4b41538801f88b68ee5b610eafa152defad18762d29731d6dd548",
+      "width": 768,
+      "height": 960
+    }
+  ],
+  "intermediate_failures_corrected": [
+    "Citation accessible name",
+    "Citation 410 unavailable handling",
+    "Reverse-tab modal focus containment",
+    "Pending assistant activation state",
+    "HTML formatting",
+    "Hidden mobile heading in auxiliary screenshot script",
+    "Root-directory mypy lacked backend configuration; correct invocation passed",
+    "Initial temporary gateway HTTP probe raced startup; readiness retry passed"
+  ],
+  "boundaries": {
+    "provider": "deterministic backend fake with real APIs/storage/workers/realtime",
+    "live_provider_verified": false,
+    "physical_mobile_keyboard_verified": false,
+    "public_deployment_performed": false,
+    "paid_services_activated": false,
+    "live_credentials_changed": false,
+    "new_performance_target_claimed": false,
+    "prior_release_manifests": "Historical pre-Tarvio revisions; not current frontend performance evidence",
+    "remaining_release_gates": [
+      "physical-device keyboard check",
+      "live provider validation with separate authorized credentials/budget",
+      "independent human evaluation",
+      "off-host encrypted restore"
+    ]
+  }
+}

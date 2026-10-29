@@ -120,7 +120,9 @@ structure, exact verification commands and screenshots are in [the integration n
 - Corrected intermediate failures: source accessible label, citation 410 rendering, reverse-tab modal focus containment, asynchronous activation checkbox and HTML formatting. The auxiliary mobile screenshot selector was corrected. A root-directory mypy attempt missed backend settings and was stopped; the correct backend-directory invocation passed. Two upstream Zod annotation warnings remain nonfatal build output.
 - Restored ordinary local provider settings after the slow-generation test. PostgreSQL/Redis are healthy; API readiness reports schema 0007, Redis ok, explicit fake provider, and frontend HTTP 200.
 
-Container asset verification and the final source/evidence checkpoint are being recorded.
+- Gateway Docker build and Caddy validation passed, with local brand/font/license checks and byte-exact HTTP SPA/font checks in a temporary loopback-only container. An initial HTTP probe raced startup; bounded readiness retries passed. Existing Caddy indentation warnings remain nonfatal.
+- Source checkpoint: `89a062f0e0507f031ad973193d867b3462c078d9`, local branch `codex/tarvio-frontend`. See [current frontend evidence](evidence/tarvio.json); unrelated untracked `skills/` was preserved.
+
 No blocker is known for the local deterministic-provider integration. Physical-device
 keyboard behavior, live-provider validation, independent human evaluation and off-host
 encrypted restore remain unverified release boundaries. Earlier benchmark/release/video
