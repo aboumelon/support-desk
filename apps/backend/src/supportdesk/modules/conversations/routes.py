@@ -219,9 +219,21 @@ def audience_router(audience: str) -> APIRouter:
             )
         ).all()
         if after_seq > conversation.last_event_seq or (
-            items and items[0].seq != after_seq + 1
+            after_seq < conversation.last_event_seq
+            and (not items or items[0].seq != after_seq + 1)
         ):
-            raise Problem(409, "RESET_REQUIRED")
+            oldest = await db.scalar(
+                select(func.min(ConversationEvent.seq)).where(
+                    ConversationEvent.workspace_id == actor.workspace_id,
+                    ConversationEvent.conversation_id == conversation_id,
+                )
+            )
+            raise Problem(
+                409,
+                "RESET_REQUIRED",
+                oldest_available_seq=oldest,
+                event_cursor=conversation.last_event_seq,
+            )
         result = [
             DurableEvent.model_validate(
                 {

@@ -128,3 +128,46 @@ async def test_create_command_replay(client: AsyncClient):
     )
     assert all(r.status_code == 200 for r in responses)
     assert len({r.json()["id"] for r in responses}) == 1
+
+
+async def test_event_history_pagination_and_retention_cursor_are_authorized(client):
+    from uuid import UUID
+
+    from sqlalchemy import delete
+
+    identity, conversation = await setup(client)
+    cid = UUID(conversation["id"])
+    workspace = UUID(identity["workspace_id"])
+    async with Session.begin() as db:
+        stored = await db.get(Conversation, cid)
+        for seq in range(2, 204):
+            db.add(
+                ConversationEvent(
+                    workspace_id=workspace,
+                    conversation_id=cid,
+                    seq=seq,
+                    type="conversation.control_changed",
+                    payload={"controller": "queue", "action": "release"},
+                )
+            )
+        stored.last_event_seq = 203
+    url = f"/api/v1/customer/conversations/{cid}/events"
+    first = (await client.get(url)).json()
+    second = (await client.get(url, params={"after_seq": first[-1]["seq"]})).json()
+    assert [event["seq"] for event in first] == list(range(1, 101))
+    assert [event["seq"] for event in second] == list(range(101, 201))
+    async with Session.begin() as db:
+        await db.execute(delete(ConversationEvent).where(ConversationEvent.seq <= 100))
+    reset = await client.get(url)
+    assert reset.status_code == 409
+    assert reset.json()["details"] == {"oldest_available_seq": 101, "event_cursor": 203}
+    retained = (await client.get(url, params={"after_seq": 100})).json()
+    assert retained[0]["seq"] == 101
+    async with Session.begin() as db:
+        await db.execute(delete(ConversationEvent))
+    reset = await client.get(url)
+    assert reset.status_code == 409
+    assert reset.json()["details"]["oldest_available_seq"] is None
+    assert (await client.get(url, params={"after_seq": 203})).json() == []
+    await client.post("/api/v1/public/demo")
+    assert (await client.get(url)).status_code == 404

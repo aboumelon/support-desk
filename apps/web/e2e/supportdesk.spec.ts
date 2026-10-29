@@ -6,7 +6,7 @@ test("isolated customer and operator complete persistent assistant and human cha
 }) => {
   await page.goto("/demo");
   await page
-    .getByRole("button", { name: "شروع دموی مستقل ←", exact: true })
+    .getByRole("button", { name: "شروع دموی مستقل", exact: true })
     .click();
   await page
     .getByRole("button", { name: "گفت‌وگوی تازه", exact: true })
@@ -14,13 +14,15 @@ test("isolated customer and operator complete persistent assistant and human cha
   await page
     .getByRole("textbox", { name: "پیام", exact: true })
     .fill("How long is the Naran trial?");
-  await page.getByRole("button", { name: "ارسال ↑", exact: true }).click();
+  await page.getByRole("button", { name: "ارسال", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "منبع S1 ↗", exact: true }),
+    page.getByRole("button", { name: "منبع S1", exact: true }),
   ).toBeVisible({ timeout: 30000 });
-  await page.getByRole("button", { name: "منبع S1 ↗", exact: true }).click();
-  await expect(page.getByRole("dialog")).toContainText("fourteen days");
-  await page.getByRole("button", { name: "بستن", exact: true }).click();
+  await page.getByRole("button", { name: "منبع S1", exact: true }).click();
+  await expect(
+    page.getByRole("complementary", { name: "یادداشت منبع" }),
+  ).toContainText("fourteen days");
+  await page.getByRole("button", { name: "بستن یادداشت", exact: true }).click();
   await page.reload();
   await expect(
     page.getByText("How long is the Naran trial?", { exact: true }),
@@ -41,15 +43,17 @@ test("isolated customer and operator complete persistent assistant and human cha
   );
   await staffContext.addCookies(cookies);
   const staff = await staffContext.newPage();
-  await staff.goto("/workspace");
-  await staff.getByRole("button", { name: "کارشناس", exact: true }).click();
+  const customerIdentity = await (
+    await page.request.get("/api/v1/customer/session")
+  ).json();
+  await staff.goto(`/app/${customerIdentity.workspace_id}/inbox`);
   await staff
     .getByRole("button", { name: "پذیرش گفت‌وگو", exact: true })
     .click();
   await staff
     .getByRole("textbox", { name: "پیام", exact: true })
     .fill("پاسخ کارشناس برای آزمون ماندگاری");
-  await staff.getByRole("button", { name: "ارسال ↑", exact: true }).click();
+  await staff.getByRole("button", { name: "ارسال", exact: true }).click();
   await expect(
     page.getByText("پاسخ کارشناس برای آزمون ماندگاری", { exact: true }),
   ).toBeVisible();
@@ -57,7 +61,7 @@ test("isolated customer and operator complete persistent assistant and human cha
   await staff
     .getByRole("textbox", { name: "پیام", exact: true })
     .fill("پیام هنگام قطع اتصال مشتری");
-  await staff.getByRole("button", { name: "ارسال ↑", exact: true }).click();
+  await staff.getByRole("button", { name: "ارسال", exact: true }).click();
   await expect(
     staff.getByText("پیام هنگام قطع اتصال مشتری", { exact: true }),
   ).toBeVisible();
@@ -87,7 +91,7 @@ test("isolated customer and operator complete persistent assistant and human cha
     path: "../../docs/evidence/operator-inbox.png",
     fullPage: true,
   });
-  await staff.getByRole("button", { name: "دانش‌نامه", exact: true }).click();
+  await staff.getByRole("link", { name: "دانش‌نامه", exact: true }).click();
   await expect(
     staff.getByText("Fictional fixture: trial", { exact: true }),
   ).toBeVisible();
@@ -114,9 +118,9 @@ test("isolated customer and operator complete persistent assistant and human cha
   await customer
     .getByRole("textbox", { name: "پیام", exact: true })
     .fill("How long is the Naran trial?");
-  await customer.getByRole("button", { name: "ارسال ↑", exact: true }).click();
+  await customer.getByRole("button", { name: "ارسال", exact: true }).click();
   await expect(
-    customer.getByRole("button", { name: "منبع S1 ↗", exact: true }),
+    customer.getByRole("button", { name: "منبع S1", exact: true }),
   ).toBeVisible({ timeout: 30000 });
   const before = await (
     await customer.request.get("/api/v1/customer/session")
@@ -146,7 +150,7 @@ test("staff login opens the authorized workspace inbox directly", async ({
     .click();
   await expect(page).toHaveURL(/\/app\/[^/]+\/inbox$/);
   await expect(
-    page.getByRole("heading", { name: "صندوق پشتیبانی", exact: true }),
+    page.getByRole("heading", { name: "صندوق گفتگو", exact: true }),
   ).toBeVisible();
   expect((await page.request.get("/api/v1/customer/session")).status()).toBe(
     401,

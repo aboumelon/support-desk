@@ -105,3 +105,25 @@ fixture-mode outcome, with `bash scripts/start-local.sh` to recover after a cont
 - The full ten-minute, 200-client/two-API Redis-outage run passed in isolation from tests/builds: 3,195 sends, zero send failures, all 200 acknowledged-message checks passed, commit p95 110.76ms and delivery p95 488ms (maximum 7.87s). The two earlier short failed measurements are retained. `RECOVERY_DURATION_SECONDS` can explicitly select a shorter diagnostic run; the default now matches the ten-minute scenario.
 
 - Final recovery report: `evidence/benchmark-recovery.json`; terminal report: `evidence/benchmark-recovery-console.txt`. The restart helper stale-PID guard was exercised against an unrelated-command test process; it refused to signal it and preserved the running app.
+
+## Tarvio frontend integration (2026-10-29)
+
+The latest prototype is connected to the existing application. Entry/login, operator
+inbox, customer chat, responsibility/timeline, source inspector, knowledge and settings
+use real authorized APIs. The archive/config separation, typed mappings, component
+structure, exact verification commands and screenshots are in [the integration note](frontend-integration.md).
+
+- Final browser sweep: **5 passed in 1.4m**, covering real customer/staff flows, offline recovery, retry after server commit with one canonical message, handoff while streaming, independent drafts, admin ingestion/failed replacement/withdrawal, activation, authorization boundaries, and 105 persisted transition events across pages.
+- Responsive customer/operator/knowledge screenshots inspected at 1440/1024/768/390; source modal keyboard/focus/inert/Escape/restoration and a 390x520 focused composer passed. Entry/login screenshots were also inspected at 1440/390.
+- Full backend suite: **42 passed in 136.93s** on PostgreSQL, including worker-crash/lease recovery. Ruff formatting/lint and configured strict mypy (54 files) passed. The retained-event recovery regression is included; no migration was required.
+- Frontend lint, types, formatting, production build, 7 unit tests and contract drift passed. Fonts/assets are local with OFL licenses. Vite remains 7.3.7.
+- Corrected intermediate failures: source accessible label, citation 410 rendering, reverse-tab modal focus containment, asynchronous activation checkbox and HTML formatting. The auxiliary mobile screenshot selector was corrected. A root-directory mypy attempt missed backend settings and was stopped; the correct backend-directory invocation passed. Two upstream Zod annotation warnings remain nonfatal build output.
+- Restored ordinary local provider settings after the slow-generation test. PostgreSQL/Redis are healthy; API readiness reports schema 0007, Redis ok, explicit fake provider, and frontend HTTP 200.
+
+Container asset verification and the final source/evidence checkpoint are being recorded.
+No blocker is known for the local deterministic-provider integration. Physical-device
+keyboard behavior, live-provider validation, independent human evaluation and off-host
+encrypted restore remain unverified release boundaries. Earlier benchmark/release/video
+evidence remains tied to its own pre-Tarvio revision; no new performance target is claimed.
+Run `bash scripts/start-local.sh` and open `http://localhost:5173`. Next release step:
+physical-device keyboard validation, followed by the existing independent release gates.

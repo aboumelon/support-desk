@@ -111,6 +111,9 @@ async def control(
         conversation,
         kind,
         {
+            "action": action,
+            "actor_id": str(actor.id),
+            "actor_kind": actor.kind,
             "controller": conversation.controller,
             "status": conversation.status,
             "assigned_actor_id": str(conversation.assigned_actor_id)

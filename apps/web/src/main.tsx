@@ -1,11 +1,6 @@
-import { clearPending } from "./lib/pending-sends";
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import {
-  QueryClient,
-  QueryClientProvider,
-  useQuery,
-} from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import {
   createRootRoute,
   createRoute,
@@ -13,19 +8,32 @@ import {
   RouterProvider,
   Outlet,
   Link,
+  useLocation,
   useNavigate,
   useParams,
 } from "@tanstack/react-router";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import * as Label from "@radix-ui/react-label";
 import i18n from "i18next";
 import { initReactI18next, useTranslation } from "react-i18next";
-import { api, type components } from "@supportdesk/api-client";
+import { api } from "@supportdesk/api-client";
+import { clearPending } from "./lib/pending-sends";
+import { clearDrafts } from "./lib/composer-drafts";
+import { queryClient, resetScope } from "./lib/query-client";
+import { Brand, Button, EmptyState, Icon } from "./components/ui";
+import type { Audience, Session } from "./features/conversation/presentation";
 import fa from "./locales/fa.json";
 import en from "./locales/en.json";
+import "@fontsource-variable/estedad";
+import "@fontsource-variable/inter";
 import "./styles/app.css";
 
+const Landing = React.lazy(() =>
+  import("./features/auth/pages").then((module) => ({
+    default: module.Landing,
+  })),
+);
+const Login = React.lazy(() =>
+  import("./features/auth/pages").then((module) => ({ default: module.Login })),
+);
 const Desk = React.lazy(() =>
   import("./features/conversation/desk").then((module) => ({
     default: module.Desk,
@@ -42,176 +50,148 @@ i18n.use(initReactI18next).init({
   fallbackLng: "fa",
   interpolation: { escapeValue: false },
 });
-const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: false, staleTime: 15000 } },
-});
-type Session = components["schemas"]["SessionView"];
-
+function useSession(audience: Audience) {
+  return useQuery({
+    queryKey: ["session", audience],
+    queryFn: async () => {
+      const result =
+        audience === "customer"
+          ? await api.GET("/api/v1/customer/session")
+          : await api.GET("/api/v1/auth/staff/me");
+      if (result.data) return result.data;
+      if ([401, 403].includes(result.response.status)) return null;
+      throw Error();
+    },
+  });
+}
 function Shell() {
   const { t } = useTranslation();
   return (
-    <div className="shell">
-      <header>
-        <Link to="/" className="brand">
-          <span className="brand-icon">ن</span>
-          <strong>{t("brand")}</strong>
-          <span className="brand-sub">{t("product")}</span>
-        </Link>
-        <nav>
-          <span className="fixture">
-            <i />
-            {t("fixture")}
-          </span>
-          <Link to="/login">{t("login")} ↗</Link>
-        </nav>
-      </header>
-      <Outlet />
-      <footer>
-        <span>
-          {t("brand")} / {t("product")}
-        </span>
-        <span>{t("fixtureNote")}</span>
-      </footer>
+    <div className="tarvio" dir="rtl">
+      <React.Suspense
+        fallback={
+          <div className="route-status" role="status">
+            {t("loading")}
+          </div>
+        }
+      >
+        <Outlet />
+      </React.Suspense>
     </div>
   );
 }
-function Landing() {
+function Rail({
+  session,
+  customer,
+  section,
+  onLogout,
+}: {
+  session: Session;
+  customer: Session | null | undefined;
+  section: string;
+  onLogout: () => void;
+}) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
-  async function start() {
-    setBusy(true);
-    setError(false);
-    try {
-      const { data, error } = await api.POST("/api/v1/public/demo");
-      if (error || !data) throw Error();
-      await clearPending();
-      queryClient.clear();
-      await navigate({ to: "/workspace" });
-    } catch {
-      setError(true);
-    } finally {
-      setBusy(false);
-    }
-  }
+  const membership = session.memberships[0];
+  const workspaceId = membership.workspace_id;
+  const canCustomer =
+    customer?.workspace_id === workspaceId && customer.public_key;
   return (
-    <main className="landing">
-      <div className="hero">
-        <span className="eyebrow">{t("product")} / ۰۱</span>
-        <h1>{t("tagline")}</h1>
-        <p>{t("intro")}</p>
-        <div className="actions">
-          <button onClick={start} disabled={busy}>
-            {t(busy ? "loading" : "demo")} <span>←</span>
-          </button>
-          <Link className="secondary" to="/login">
-            {t("login")}
-          </Link>
-        </div>
-        {error && (
-          <p role="alert" className="error">
-            {t("error")}
-          </p>
+    <aside className="rail" aria-label={t("mainNav")}>
+      <Link to="/" className="rail__brand" aria-label={t("brand")}>
+        <Brand light />
+      </Link>
+      <nav className="rail__nav">
+        <Link
+          className={section === "inbox" ? "active" : ""}
+          to="/app/$workspaceId/inbox"
+          params={{ workspaceId }}
+        >
+          <Icon name="inbox" />
+          <span>{t("inbox")}</span>
+        </Link>
+        {membership.role === "admin" && (
+          <>
+            <Link
+              className={section === "knowledge" ? "active" : ""}
+              to="/app/$workspaceId/knowledge"
+              params={{ workspaceId }}
+            >
+              <Icon name="book" />
+              <span>{t("knowledge")}</span>
+            </Link>
+            <Link
+              className={section === "settings" ? "active" : ""}
+              to="/app/$workspaceId/settings"
+              params={{ workspaceId }}
+            >
+              <Icon name="settings" />
+              <span>{t("settings")}</span>
+            </Link>
+          </>
         )}
-        <small>{t("isolation")}</small>
+      </nav>
+      <div className="rail__bottom">
+        <span className="demo-label" title={membership.name}>
+          {t(membership.role)}
+          <bdi dir="ltr">#{membership.actor_id.slice(0, 6)}</bdi>
+        </span>
+        {canCustomer && (
+          <Link to="/chat/$publicKey" params={{ publicKey: canCustomer }}>
+            <Icon name="user" />
+            <span>{t("customerView")}</span>
+          </Link>
+        )}
+        <button onClick={onLogout}>
+          <Icon name="logout" />
+          <span>{t("logout")}</span>
+        </button>
       </div>
-      <aside className="hero-art" aria-hidden="true">
-        <div className="orbit orbit-one" />
-        <div className="orbit orbit-two" />
-        <span className="art-label">{t("brand")}</span>
-        <div className="bubble one">
-          <span />
-          <span />
-          <span />
-        </div>
-        <div className="bubble two">✓</div>
-        <div className="art-caption">
-          {t("secure")} <b>↗</b>
-        </div>
-      </aside>
-      <section className="features">
-        {["isolation", "human", "grounded"].map((key, index) => (
-          <article key={key}>
-            <span className="number">۰{index + 1}</span>
-            <h2>{t(key)}</h2>
-            <p>{t(key + "Body")}</p>
-          </article>
-        ))}
-      </section>
-    </main>
+    </aside>
   );
 }
-function Login() {
+function CustomerFrame({
+  session,
+  staff,
+  onLogout,
+}: {
+  session: Session;
+  staff: Session | null | undefined;
+  onLogout: () => void;
+}) {
   const { t } = useTranslation();
-  const { register, handleSubmit } = useForm<{
-    email: string;
-    password: string;
-  }>();
-  const navigate = useNavigate();
-  const [error, setError] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const membership = staff?.memberships.find(
+    (m) => m.workspace_id === session.workspace_id,
+  );
   return (
-    <main className="auth-page">
-      <div className="auth-card">
-        <span className="eyebrow">{t("operator")}</span>
-        <h1>{t("login")}</h1>
-        <form
-          onSubmit={handleSubmit(async (values) => {
-            setError(false);
-            if (!z.email().safeParse(values.email).success) {
-              setError(true);
-              return;
-            }
-            setBusy(true);
-            try {
-              const { data, error } = await api.POST(
-                "/api/v1/auth/staff/login",
-                {
-                  body: values,
-                },
-              );
-              const workspaceId = data?.memberships[0]?.workspace_id;
-              if (error || !workspaceId) throw Error();
-              await clearPending();
-              queryClient.clear();
-              await navigate({
-                to: "/app/$workspaceId/inbox",
-                params: { workspaceId },
-              });
-            } catch {
-              setError(true);
-            } finally {
-              setBusy(false);
-            }
-          })}
-        >
-          <Label.Root htmlFor="email">{t("email")}</Label.Root>
-          <input
-            id="email"
-            type="email"
-            dir="ltr"
-            autoComplete="username"
-            required
-            {...register("email")}
-          />
-          <Label.Root htmlFor="password">{t("password")}</Label.Root>
-          <input
-            id="password"
-            type="password"
-            dir="ltr"
-            autoComplete="current-password"
-            required
-            {...register("password")}
-          />
-          {error && (
-            <p role="alert" className="error">
-              {t("error")}
-            </p>
+    <main className="customer-page">
+      <header className="customer-header">
+        <Link to="/">
+          <Brand />
+        </Link>
+        <div className="customer-actions">
+          {membership && (
+            <Link
+              className="button button--secondary"
+              to="/app/$workspaceId/inbox"
+              params={{ workspaceId: membership.workspace_id }}
+            >
+              {t("staffView")}
+            </Link>
           )}
-          <button disabled={busy}>{t(busy ? "loading" : "submit")}</button>
-        </form>
-        <Link to="/">{t("back")}</Link>
+          <Button variant="ghost" onClick={onLogout} aria-label={t("logout")}>
+            <Icon name="logout" />
+          </Button>
+        </div>
+      </header>
+      <div className="customer-layout">
+        <React.Suspense fallback={<p role="status">{t("loading")}</p>}>
+          <Desk
+            key={`${session.workspace_id}:${session.actor_id}`}
+            session={session}
+            audience="customer"
+          />
+        </React.Suspense>
       </div>
     </main>
   );
@@ -219,34 +199,29 @@ function Login() {
 function Workspace() {
   const { t } = useTranslation();
   const params = useParams({ strict: false });
-  const [audience, setAudience] = useState<"customer" | "staff">(
-    location.pathname.startsWith("/app/") ? "staff" : "customer",
-  );
-  const [knowledge, setKnowledge] = useState(
-    location.pathname.endsWith("/knowledge") ||
-      location.pathname.endsWith("/settings"),
-  );
+  const pathname = useLocation({ select: (location) => location.pathname });
+  const staffRoute = pathname.startsWith("/app/");
+  const audience: Audience = staffRoute ? "staff" : "customer";
+  const staff = useSession("staff");
+  const customer = useSession("customer");
+  const session = staffRoute ? staff : customer;
   const navigate = useNavigate();
-  const session = useQuery({
-    queryKey: ["session", audience],
-    queryFn: async () => {
-      const result =
-        audience === "customer"
-          ? await api.GET("/api/v1/customer/session")
-          : await api.GET("/api/v1/auth/staff/me");
-      if (!result.data) throw Error();
-      return result.data;
-    },
-  });
-  const scopedSession =
-    session.data && audience === "staff" && params.workspaceId
-      ? {
-          ...session.data,
-          memberships: session.data.memberships.filter(
-            (m) => m.workspace_id === params.workspaceId,
-          ),
-        }
-      : session.data;
+  const membership = staff.data?.memberships.find(
+    (m) =>
+      m.workspace_id ===
+      (params.workspaceId ?? staff.data?.memberships[0]?.workspace_id),
+  );
+  const scoped =
+    staff.data && membership
+      ? { ...staff.data, memberships: [membership] }
+      : null;
+  useEffect(() => {
+    if (!staffRoute && customer.data === null && staff.data?.memberships[0])
+      void navigate({
+        to: "/app/$workspaceId/inbox",
+        params: { workspaceId: staff.data.memberships[0].workspace_id },
+      });
+  }, [customer.data, staff.data, staffRoute]);
   async function logout(value: Session) {
     const headers = { "X-CSRF-Token": value.csrf_token };
     const result =
@@ -254,108 +229,133 @@ function Workspace() {
         ? await api.POST("/api/v1/customer/logout", { headers })
         : await api.POST("/api/v1/auth/staff/logout", { headers });
     if (!result.error) {
-      await clearPending();
-      queryClient.clear();
+      await resetScope();
       await navigate({ to: "/" });
     }
   }
-  return (
-    <main className="workspace-page">
-      <aside className="sidebar">
-        <span className="eyebrow">{t("workspace")}</span>
-        <h2>{t("welcome")}</h2>
-        <button
-          className={audience === "customer" ? "selected" : "ghost"}
-          onClick={() => {
-            setAudience("customer");
-            setKnowledge(false);
-          }}
-        >
-          {t("customer")}
-        </button>
-        <button
-          className={audience === "staff" ? "selected" : "ghost"}
-          onClick={() => {
-            setAudience("staff");
-            setKnowledge(false);
-          }}
-        >
-          {t("operator")}
-        </button>
-        {audience === "staff" &&
-          scopedSession?.memberships.some((m) => m.role === "admin") && (
-            <button
-              className={knowledge ? "selected" : "ghost"}
-              onClick={() => setKnowledge(true)}
-            >
-              {t("knowledge")}
-            </button>
+  if (session.isLoading)
+    return (
+      <div className="route-status" role="status">
+        {t("loading")}
+      </div>
+    );
+  if (!session.data || (staffRoute && !scoped))
+    return (
+      <main className="route-status">
+        <Brand />
+        <p role="alert">
+          {t(
+            session.error
+              ? "apiUnavailable"
+              : staffRoute && staff.data
+                ? "accessDenied"
+                : "sessionExpired",
           )}
-      </aside>
-      <section className="workspace-content">
-        <span className="eyebrow">{t("sessions")}</span>
-        {session.isLoading ? (
-          <p>{t("loading")}</p>
-        ) : session.error ? (
-          <p role="alert">{t("sessionExpired")}</p>
-        ) : (
-          scopedSession && (
-            <>
-              <React.Suspense fallback={<p>{t("loading")}</p>}>
-                {knowledge && audience === "staff" ? (
-                  <Knowledge session={scopedSession} />
-                ) : (
-                  <Desk
-                    key={`${audience}:${params.workspaceId ?? "demo"}:${params.conversationId ?? ""}`}
-                    session={scopedSession}
-                    audience={audience}
-                    initialConversation={params.conversationId}
-                  />
-                )}
-              </React.Suspense>
-              <button
-                className="secondary logout"
-                onClick={() => logout(scopedSession)}
-              >
-                {t("logout")}
-              </button>
-            </>
+        </p>
+        <Link className="button button--primary" to="/login">
+          {t("login")}
+        </Link>
+        <Link to="/demo">{t("demo")}</Link>
+      </main>
+    );
+  if (!staffRoute)
+    return (
+      <CustomerFrame
+        session={session.data}
+        staff={staff.data}
+        onLogout={() => logout(session.data!)}
+      />
+    );
+  const section = pathname.endsWith("/knowledge")
+    ? "knowledge"
+    : pathname.endsWith("/settings")
+      ? "settings"
+      : "inbox";
+  return (
+    <main
+      className={`workspace-shell ${section !== "inbox" ? "knowledge-shell" : ""}`}
+    >
+      <Rail
+        session={scoped!}
+        customer={customer.data}
+        section={section}
+        onLogout={() => logout(scoped!)}
+      />
+      <React.Suspense
+        fallback={
+          <p className="route-status" role="status">
+            {t("loading")}
+          </p>
+        }
+      >
+        {section !== "inbox" ? (
+          membership?.role === "admin" ? (
+            <Knowledge
+              key={membership.workspace_id}
+              session={scoped!}
+              settingsOnly={section === "settings"}
+            />
+          ) : (
+            <EmptyState title={t("accessDenied")} text={t("readOnly")} />
           )
+        ) : (
+          <Desk
+            key={`${membership!.workspace_id}:${membership!.actor_id}`}
+            session={scoped!}
+            audience="staff"
+            initialConversation={params.conversationId}
+          />
         )}
-      </section>
+      </React.Suspense>
     </main>
   );
 }
 function CustomerEntry() {
   const { t } = useTranslation();
   const { publicKey } = chatRoute.useParams();
+  const staff = useSession("staff");
+  const navigate = useNavigate();
   const session = useQuery({
     queryKey: ["public-session", publicKey],
     queryFn: async () => {
       const current = await api.GET("/api/v1/customer/session");
       if (current.data?.public_key === publicKey) return current.data;
-      const created = await api.POST(
+      if (!current.data && ![401, 403].includes(current.response.status))
+        throw Error();
+      const result = await api.POST(
         "/api/v1/public/workspaces/{public_key}/visitor-sessions",
         { params: { path: { public_key: publicKey } } },
       );
-      if (!created.data) throw Error();
+      if (!result.data) throw Error();
       await clearPending();
+      clearDrafts();
       queryClient.removeQueries({ queryKey: ["snapshot", "customer"] });
-      return created.data;
+      return result.data;
     },
   });
   if (!session.data)
     return (
-      <main className="auth-page">
-        {t(session.error ? "error" : "loading")}
-      </main>
+      <div className="route-status">
+        <Brand />
+        <p role={session.error ? "alert" : "status"}>
+          {t(session.error ? "error" : "loading")}
+        </p>
+      </div>
     );
   return (
-    <main className="customer-page">
-      <React.Suspense fallback={<p>{t("loading")}</p>}>
-        <Desk audience="customer" session={session.data} />
-      </React.Suspense>
-    </main>
+    <CustomerFrame
+      session={session.data}
+      staff={staff.data}
+      onLogout={async () => {
+        const result = await api.POST("/api/v1/customer/logout", {
+          headers: { "X-CSRF-Token": session.data!.csrf_token },
+        });
+        if (!result.error) {
+          await resetScope();
+          await navigate({ to: "/" });
+        }
+      }}
+    />
   );
 }
 const rootRoute = createRootRoute({ component: Shell });

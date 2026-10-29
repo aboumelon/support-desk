@@ -17,6 +17,7 @@ export function MessageMarkdown({ body }: { body: string }) {
         components={{
           p: ({ children }) => <p dir="auto">{children}</p>,
           pre: ({ children }) => <pre dir="ltr">{children}</pre>,
+          img: ({ alt }) => <span>{alt}</span>,
           a: ({ href, children }) => (
             <a href={href} target="_blank" rel="noopener noreferrer">
               {children}

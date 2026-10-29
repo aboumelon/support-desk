@@ -1,0 +1,141 @@
+# Tarvio frontend integration
+
+Status: connected implementation verified locally; final container evidence is being recorded.
+Source archive: `/home/armin/Downloads/Tarvio Support Workspace Prototype (1).zip`.
+SHA-256: `acd8125df385d0ed1023d778946b5807bddaf982d3322360acf3c3b5b854a8c4`.
+Reference extracted under ignored `.local/references/tarvio-latest/`. Its configuration,
+agent instructions and simulated business logic are not application inputs.
+
+## Migrated application
+
+One React/Vite application remains under `apps/web`, using the existing TanStack
+Router/Query, i18next and generated API client. Prototype package/build/Figma files
+were not adopted; Vite remains 7.3.7. All product copy is in `locales/fa.json`.
+
+- `main.tsx`: authenticated route boundaries, workspace membership, separate audience sessions and navigation rail.
+- `features/auth/pages.tsx`: entry/demo and real staff login, loaded as a separate route chunk.
+- `features/conversation/desk.tsx`: paginated inbox, ownership controls, scoped composer and responsive panes.
+- `use-conversation.ts`: snapshots/history, retained event pagination, durable sends/retries, realtime/polling and provisional AI state.
+- `timeline.tsx`: sequenced persisted messages/transitions, scroll anchoring and citations.
+- `source-inspector.tsx`: authorized citation retrieval, desktop aside and accessible narrow-screen dialog.
+- `features/knowledge/knowledge.tsx`: real ingestion, version replacement, document withdrawal and canonical assistant activation.
+- `components/ui.tsx`: shared Tarvio brand/icons/buttons/modal; scoped `styles/app.css` provides ink/cobalt tokens and responsive layouts.
+
+All existing routes remain: `/`, `/demo`, `/login`, `/workspace`, `/chat/$publicKey`,
+`/app/$workspaceId/inbox`, `/app/$workspaceId/conversations/$conversationId`,
+`/app/$workspaceId/knowledge`, and `/app/$workspaceId/settings`. Direct conversation
+refresh restores authorized history; settings shows the real assistant setting.
+
+## Contract decisions
+
+- Backend `bot` maps to the assistant responsibility presentation; assignment uses the authenticated actor and `assigned_actor_id`.
+- Conversation/customer names and subject previews are absent. Use a generic customer label and short real UUID reference.
+- Message role/time/order come from `sender_kind`, `created_at` and `event_seq`.
+- Timeline reads the existing authorized, paginated event API. Existing events without actor/action remain generic; no invented people or dates.
+- Newly persisted control events include additive `action`, `actor_id`, `actor_kind` payload fields so later history distinguishes acceptance, release and handoff. No schema/migration/ownership policy changes.
+- Knowledge uses `active_version_id` and document-level withdrawal, independently showing the latest processing version.
+- Source selections include audience/workspace/conversation/message/label and retrieve authorized citation content.
+
+## Verification
+
+Commands run from the repository root on 2026-10-29:
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm exec prettier --check apps/web/src apps/web/e2e apps/web/index.html apps/web/package.json
+pnpm --filter @supportdesk/web test
+pnpm contracts:check
+pnpm build
+FAKE_SCENARIO=slow bash scripts/start-local.sh
+pnpm --filter @supportdesk/web test:e2e
+bash scripts/start-local.sh
+```
+
+Lint, types, formatting, generated-contract drift and production build passed. Seven
+frontend unit cases passed. The final browser sweep passed **5/5 in 1.4m**, using the
+real local PostgreSQL, Redis, FastAPI, outbox dispatcher, Celery ingestion and pinned E5.
+The deterministic backend LLM was explicitly selected; no frontend fixture responses
+or live calls were used. The slow-provider setting exercised handoff during generation
+and was removed by restarting the ordinary local supervisor after the tests.
+
+Browser coverage includes:
+
+- Isolated demo/customer/staff sessions, staff login, direct public entry and conversation refresh.
+- Two conversations, independent persistent drafts, queue filters, real sends and offline replay/polling recovery.
+- Handoff during streaming, claim/reply/release/resolve/reopen, canonical persisted transitions and 105 control events across multiple 100-event pages.
+- A response dropped after actual server commit, followed by retry with the same UUID and exactly one persisted message.
+- Actual upload/ready processing, assistant activation on/off persisted by PUT, failed replacement with the previous active version still usable, document withdrawal and citation unavailability.
+- Non-admin knowledge restrictions, messages assigned to another operator, and cross-workspace 404 boundaries.
+- Operator/customer/knowledge at 1440, 1024, 768 and 390px; no horizontal page overflow. Source failures/retry and modal focus containment, inert background, Escape and trigger focus restoration. A 390x520 focused-composer case covers reduced available viewport height.
+
+Backend focused verification passed **7 PostgreSQL ownership/messaging/history tests in
+1.37s**, including retained and fully expired event history and cross-workspace access.
+The final complete backend suite passed **42/42 in 136.93s**, including worker-crash
+and lease recovery. Ruff formatting/lint passed; configured strict mypy passed 54 files.
+
+```bash
+UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked --project apps/backend --all-extras pytest -q apps/backend/tests
+UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked --project apps/backend ruff format --check apps/backend
+UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked --project apps/backend ruff check apps/backend
+cd apps/backend
+UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked mypy src
+```
+
+One chained verification command ended with SIGTERM after pytest and Ruff had passed.
+A subsequent root-directory mypy invocation did not load the backend configuration
+and reported an untyped Celery import; it was stopped and rerun successfully from
+`apps/backend` using the documented command above.
+
+Production build uses local font assets and license files and emits an approximately
+415 KiB main JavaScript chunk, with auth, knowledge and conversation code split out.
+Rollup reports two upstream Zod pure-comment annotation warnings; the build succeeds.
+This is build-size evidence, not a browser performance measurement.
+
+Intermediate failures were corrected and rechecked: source button accessible name,
+withdrawn citation 410 rendering, Shift+Tab containment, the asynchronous activation
+checkbox state, and index HTML formatting. An auxiliary screenshot script initially
+selected the hidden mobile marketing heading; it was corrected to select a visible
+heading and all four entry/login screenshots were captured.
+
+## Screenshots
+
+Images were captured from real local application data and visually inspected. The
+fictional Naran document titles/content are persisted backend demo fixtures, not new
+frontend identities. Knowledge full-page captures include the fixed mobile rail at
+the original viewport boundary; the page itself scrolls independently.
+
+| View | Desktop | Tablet | Narrow tablet | Mobile |
+| --- | --- | --- | --- | --- |
+| Operator | [1440](evidence/tarvio/operator-1440.png) | [1024](evidence/tarvio/operator-1024.png) | [768](evidence/tarvio/operator-768.png) | [390](evidence/tarvio/operator-390.png) |
+| Customer | [1440](evidence/tarvio/customer-1440.png) | [1024](evidence/tarvio/customer-1024.png) | [768](evidence/tarvio/customer-768.png) | [390](evidence/tarvio/customer-390.png) |
+| Knowledge | [1440](evidence/tarvio/knowledge-1440.png) | [1024](evidence/tarvio/knowledge-1024.png) | [768](evidence/tarvio/knowledge-768.png) | [390](evidence/tarvio/knowledge-390.png) |
+| Source dialog | — | [1024](evidence/tarvio/source-1024.png) | [768](evidence/tarvio/source-768.png) | [390](evidence/tarvio/source-390.png) |
+| Entry | [1440](evidence/tarvio/entry-1440.png) | — | — | [390](evidence/tarvio/entry-390.png) |
+| Login | [1440](evidence/tarvio/login-1440.png) | — | — | [390](evidence/tarvio/login-390.png) |
+
+## Reliability and corrections
+
+- Entry/login, authenticated route navigation, rail, responsibility strip, sequenced message/event timeline, source inspector and admin knowledge UI are connected to real application APIs.
+- Fonts: pinned `@fontsource-variable/estedad` / `@fontsource-variable/inter` 5.3.0, served locally; OFL licenses copied into public font assets.
+- Retry uses persistent IndexedDB identities plus a shared in-flight guard. Composer drafts and selected conversations are scoped by audience/workspace/actor/conversation.
+- Modal source sheets use a native dialog plus explicit focus trapping, inert background, Escape and trigger focus restoration. Desktop source inspectors remain nonmodal.
+- Citation 410 is treated as an unavailable source, distinct from a transport failure. Cached excerpts are hidden while access is being revalidated.
+- Legacy timeline events use persisted transitions; new control events carry actual action/actor metadata. Event reset responses now include the oldest retained sequence, allowing authorized recovery with an explicit retention notice, including when all events expired.
+- Assistant activation reflects the pending choice while saving, then uses the canonical response; failures restore the last confirmed setting. Rendering never changes server settings.
+- File constraints follow the existing backend: TXT, Markdown or text PDF, maximum 10 MiB. Replacement is a new processing version; withdrawal affects the whole document.
+- Safe react-markdown rendering remains in place, with external images rendered as alt text, unsafe links/HTML blocked and code laid out LTR.
+
+## Remaining boundaries and next step
+
+No known blocker remains for this local deterministic-provider integration. Real mobile
+keyboard behavior still merits a physical-device pass; browser viewport/focus emulation
+does not prove OS keyboard behavior. Public deployment, live-provider validation,
+independent human evaluation and off-host encrypted restore remain the previously
+recorded release gates. Prior benchmark/release/video manifests refer to their own
+pre-Tarvio revisions and are not fresh performance evidence for this UI.
+
+Run `bash scripts/start-local.sh`, open `http://localhost:5173` and start an isolated
+demo. The next release step is the physical-device pass followed by the separate
+release gates above. No push, public deployment, paid service or live credential change
+was performed.

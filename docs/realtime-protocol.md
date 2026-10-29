@@ -14,6 +14,9 @@ A single sender serializes frames. Buffers are limited to 256 frames / 1 MiB; sl
 consumers disconnect and resume by cursor. Gaps or retained-event loss require reset.
 The client deduplicates sequence numbers, invalidates canonical queries, and reconnects
 with bounded exponential jitter. REST polling remains available during socket outages.
+The separate REST event-history endpoint reports the oldest retained sequence on
+`RESET_REQUIRED`; see [API retention details](api.md). This read-model addition does not
+change the generated realtime frame schemas or socket reset behavior.
 
 `ai.delta` contains run ID, epoch, attempt and chunk index. It is provisional and never
 replayed. A reconnect, gap, epoch change or terminal run discards the draft. Only a

@@ -1,8 +1,13 @@
-# SupportDesk
+# Tarvio / SupportDesk
 
 Persian-first support desk implemented from [the original design](supportdesk-system-design-v1.md).
 The design is retained unchanged. See [implementation plan](docs/implementation-plan.md),
 [verified progress and remaining work](docs/progress.md), and [bootstrap ADR](docs/adrs/0011-bootstrap-compatibility.md).
+
+The connected Persian RTL interface uses the Tarvio design: operator inbox, customer chat,
+knowledge management, entry and login. See the [frontend integration note](docs/frontend-integration.md)
+for archive provenance, contract mappings, current checks and responsive screenshots.
+Internal service/package names remain SupportDesk.
 
 ```mermaid
 flowchart LR
@@ -66,7 +71,7 @@ checks that an old supervisor PID belongs to this project, and waits for readine
 A 60–90 second walkthrough: start a demo, ask about the trial, open source S1, request a
 human, switch to the operator, claim and reply, refresh the customer, then inspect the
 knowledge page. [UI evidence](docs/evidence/customer-chat.png), [evaluation](docs/evaluation.md)
-and [operations](docs/runbook.md) describe exactly what was checked. The [release manifest](docs/evidence/release.json) records the source revision, lockfile hashes, images and verification boundaries.
+and [operations](docs/runbook.md) describe exactly what was checked. The [earlier release manifest](docs/evidence/release.json) records the pre-Tarvio source revision, lockfile hashes, images and verification boundaries; current frontend evidence is linked from the integration note.
 
 ## Verification
 
@@ -85,7 +90,9 @@ cd ../..
 pnpm contracts:check
 pnpm lint
 pnpm typecheck
+pnpm --filter @supportdesk/web test
 pnpm build
+pnpm --filter @supportdesk/web test:e2e
 ```
 
 Test database creation is a one-time command. Dependencies and fixtures remain on the
