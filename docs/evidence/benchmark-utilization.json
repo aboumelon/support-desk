@@ -1,0 +1,885 @@
+{
+  "scope": "API/dispatcher process RSS sum includes shared pages; excludes PostgreSQL, Redis, k6 and demo services. DB collector connection excluded. Five-second samples are not continuous peak measurements.",
+  "available_cpu_cores": 4,
+  "host_memory_total_kib": 7358476,
+  "samples": [
+    {
+      "elapsed_seconds": 0.02,
+      "database_connections": {
+        "active": 1,
+        "idle": 3
+      },
+      "application_rss_kib": 380460
+    },
+    {
+      "elapsed_seconds": 5.07,
+      "database_connections": {
+        "active": 3,
+        "idle": 9,
+        "idle in transaction": 20
+      },
+      "application_rss_kib": 416516
+    },
+    {
+      "elapsed_seconds": 10.13,
+      "database_connections": {
+        "idle": 10,
+        "idle in transaction": 2
+      },
+      "application_rss_kib": 415776
+    },
+    {
+      "elapsed_seconds": 15.17,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415828
+    },
+    {
+      "elapsed_seconds": 20.21,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415844
+    },
+    {
+      "elapsed_seconds": 25.26,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415928
+    },
+    {
+      "elapsed_seconds": 30.3,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415936
+    },
+    {
+      "elapsed_seconds": 35.33,
+      "database_connections": {
+        "idle": 11,
+        "idle in transaction": 1
+      },
+      "application_rss_kib": 415972
+    },
+    {
+      "elapsed_seconds": 40.37,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415964
+    },
+    {
+      "elapsed_seconds": 45.41,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415996
+    },
+    {
+      "elapsed_seconds": 50.45,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 416024
+    },
+    {
+      "elapsed_seconds": 55.5,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 416040
+    },
+    {
+      "elapsed_seconds": 60.54,
+      "database_connections": {
+        "active": 1,
+        "idle": 11
+      },
+      "application_rss_kib": 415384
+    },
+    {
+      "elapsed_seconds": 65.58,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415408
+    },
+    {
+      "elapsed_seconds": 70.62,
+      "database_connections": {
+        "active": 1,
+        "idle": 11
+      },
+      "application_rss_kib": 415424
+    },
+    {
+      "elapsed_seconds": 75.67,
+      "database_connections": {
+        "idle": 9,
+        "idle in transaction": 3
+      },
+      "application_rss_kib": 415452
+    },
+    {
+      "elapsed_seconds": 80.71,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415468
+    },
+    {
+      "elapsed_seconds": 85.75,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415500
+    },
+    {
+      "elapsed_seconds": 90.78,
+      "database_connections": {
+        "idle": 11,
+        "idle in transaction": 1
+      },
+      "application_rss_kib": 415536
+    },
+    {
+      "elapsed_seconds": 95.83,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415560
+    },
+    {
+      "elapsed_seconds": 100.87,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415564
+    },
+    {
+      "elapsed_seconds": 105.91,
+      "database_connections": {
+        "idle": 11,
+        "idle in transaction": 1
+      },
+      "application_rss_kib": 415584
+    },
+    {
+      "elapsed_seconds": 110.95,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415588
+    },
+    {
+      "elapsed_seconds": 115.99,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415600
+    },
+    {
+      "elapsed_seconds": 121.03,
+      "database_connections": {
+        "idle": 11,
+        "idle in transaction": 1
+      },
+      "application_rss_kib": 415612
+    },
+    {
+      "elapsed_seconds": 126.07,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415632
+    },
+    {
+      "elapsed_seconds": 131.11,
+      "database_connections": {
+        "idle": 11,
+        "idle in transaction": 1
+      },
+      "application_rss_kib": 415644
+    },
+    {
+      "elapsed_seconds": 136.16,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415652
+    },
+    {
+      "elapsed_seconds": 141.19,
+      "database_connections": {
+        "active": 1,
+        "idle": 10,
+        "idle in transaction": 1
+      },
+      "application_rss_kib": 415676
+    },
+    {
+      "elapsed_seconds": 146.25,
+      "database_connections": {
+        "idle": 11,
+        "idle in transaction": 1
+      },
+      "application_rss_kib": 415680
+    },
+    {
+      "elapsed_seconds": 151.29,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415700
+    },
+    {
+      "elapsed_seconds": 156.33,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415708
+    },
+    {
+      "elapsed_seconds": 161.37,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415716
+    },
+    {
+      "elapsed_seconds": 166.43,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415736
+    },
+    {
+      "elapsed_seconds": 171.47,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415748
+    },
+    {
+      "elapsed_seconds": 176.52,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415756
+    },
+    {
+      "elapsed_seconds": 181.57,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415768
+    },
+    {
+      "elapsed_seconds": 186.62,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415788
+    },
+    {
+      "elapsed_seconds": 191.65,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415792
+    },
+    {
+      "elapsed_seconds": 196.69,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415808
+    },
+    {
+      "elapsed_seconds": 201.73,
+      "database_connections": {
+        "active": 1,
+        "idle": 10,
+        "idle in transaction": 1
+      },
+      "application_rss_kib": 415828
+    },
+    {
+      "elapsed_seconds": 206.78,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415828
+    },
+    {
+      "elapsed_seconds": 211.82,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415848
+    },
+    {
+      "elapsed_seconds": 216.86,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415852
+    },
+    {
+      "elapsed_seconds": 221.91,
+      "database_connections": {
+        "idle": 11,
+        "idle in transaction": 1
+      },
+      "application_rss_kib": 415860
+    },
+    {
+      "elapsed_seconds": 226.96,
+      "database_connections": {
+        "idle": 10,
+        "idle in transaction": 2
+      },
+      "application_rss_kib": 415876
+    },
+    {
+      "elapsed_seconds": 232.01,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415880
+    },
+    {
+      "elapsed_seconds": 237.05,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415888
+    },
+    {
+      "elapsed_seconds": 242.09,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 415916
+    },
+    {
+      "elapsed_seconds": 247.12,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 416200
+    },
+    {
+      "elapsed_seconds": 252.17,
+      "database_connections": {
+        "idle": 8,
+        "idle in transaction": 4
+      },
+      "application_rss_kib": 416268
+    },
+    {
+      "elapsed_seconds": 257.23,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 416280
+    },
+    {
+      "elapsed_seconds": 262.27,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 416296
+    },
+    {
+      "elapsed_seconds": 267.31,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 416296
+    },
+    {
+      "elapsed_seconds": 272.35,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 416296
+    },
+    {
+      "elapsed_seconds": 277.38,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 416296
+    },
+    {
+      "elapsed_seconds": 282.43,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 416296
+    },
+    {
+      "elapsed_seconds": 287.47,
+      "database_connections": {
+        "idle": 11,
+        "idle in transaction": 1
+      },
+      "application_rss_kib": 416312
+    },
+    {
+      "elapsed_seconds": 292.51,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 416308
+    },
+    {
+      "elapsed_seconds": 297.55,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 416344
+    },
+    {
+      "elapsed_seconds": 302.59,
+      "database_connections": {
+        "active": 1,
+        "idle": 12,
+        "idle in transaction": 19
+      },
+      "application_rss_kib": 420132
+    },
+    {
+      "elapsed_seconds": 307.67,
+      "database_connections": {
+        "active": 3,
+        "idle": 10,
+        "idle in transaction": 12
+      },
+      "application_rss_kib": 433928
+    },
+    {
+      "elapsed_seconds": 312.74,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 433880
+    },
+    {
+      "elapsed_seconds": 317.79,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 433884
+    },
+    {
+      "elapsed_seconds": 322.84,
+      "database_connections": {
+        "idle": 10,
+        "idle in transaction": 19
+      },
+      "application_rss_kib": 434056
+    },
+    {
+      "elapsed_seconds": 327.89,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 433896
+    },
+    {
+      "elapsed_seconds": 332.93,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 434056
+    },
+    {
+      "elapsed_seconds": 337.98,
+      "database_connections": {
+        "idle": 9,
+        "idle in transaction": 3
+      },
+      "application_rss_kib": 434848
+    },
+    {
+      "elapsed_seconds": 343.02,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 434976
+    },
+    {
+      "elapsed_seconds": 348.06,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 434976
+    },
+    {
+      "elapsed_seconds": 353.11,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 434976
+    },
+    {
+      "elapsed_seconds": 358.15,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 434976
+    },
+    {
+      "elapsed_seconds": 363.18,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 434984
+    },
+    {
+      "elapsed_seconds": 368.22,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 434980
+    },
+    {
+      "elapsed_seconds": 373.27,
+      "database_connections": {
+        "active": 1,
+        "idle": 5,
+        "idle in transaction": 6
+      },
+      "application_rss_kib": 435008
+    },
+    {
+      "elapsed_seconds": 378.32,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435096
+    },
+    {
+      "elapsed_seconds": 383.36,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435132
+    },
+    {
+      "elapsed_seconds": 388.4,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435132
+    },
+    {
+      "elapsed_seconds": 393.45,
+      "database_connections": {
+        "idle": 10,
+        "idle in transaction": 2
+      },
+      "application_rss_kib": 435132
+    },
+    {
+      "elapsed_seconds": 398.5,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435132
+    },
+    {
+      "elapsed_seconds": 403.54,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435132
+    },
+    {
+      "elapsed_seconds": 408.57,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435140
+    },
+    {
+      "elapsed_seconds": 413.61,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435144
+    },
+    {
+      "elapsed_seconds": 418.67,
+      "database_connections": {
+        "idle": 9,
+        "idle in transaction": 3
+      },
+      "application_rss_kib": 435200
+    },
+    {
+      "elapsed_seconds": 423.73,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435224
+    },
+    {
+      "elapsed_seconds": 428.77,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435224
+    },
+    {
+      "elapsed_seconds": 433.81,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435224
+    },
+    {
+      "elapsed_seconds": 438.85,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435228
+    },
+    {
+      "elapsed_seconds": 443.89,
+      "database_connections": {
+        "idle": 8,
+        "idle in transaction": 4
+      },
+      "application_rss_kib": 435232
+    },
+    {
+      "elapsed_seconds": 448.94,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435228
+    },
+    {
+      "elapsed_seconds": 454.07,
+      "database_connections": {
+        "idle": 6,
+        "idle in transaction": 6
+      },
+      "application_rss_kib": 435276
+    },
+    {
+      "elapsed_seconds": 459.14,
+      "database_connections": {
+        "idle": 11,
+        "idle in transaction": 1
+      },
+      "application_rss_kib": 435260
+    },
+    {
+      "elapsed_seconds": 464.18,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435288
+    },
+    {
+      "elapsed_seconds": 469.22,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435288
+    },
+    {
+      "elapsed_seconds": 474.26,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435288
+    },
+    {
+      "elapsed_seconds": 479.3,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435288
+    },
+    {
+      "elapsed_seconds": 484.34,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435292
+    },
+    {
+      "elapsed_seconds": 489.38,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435292
+    },
+    {
+      "elapsed_seconds": 494.43,
+      "database_connections": {
+        "active": 1,
+        "idle": 9,
+        "idle in transaction": 2
+      },
+      "application_rss_kib": 435308
+    },
+    {
+      "elapsed_seconds": 499.5,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435384
+    },
+    {
+      "elapsed_seconds": 504.54,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435388
+    },
+    {
+      "elapsed_seconds": 509.59,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435388
+    },
+    {
+      "elapsed_seconds": 514.63,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435388
+    },
+    {
+      "elapsed_seconds": 519.67,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435388
+    },
+    {
+      "elapsed_seconds": 524.71,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435388
+    },
+    {
+      "elapsed_seconds": 529.76,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435396
+    },
+    {
+      "elapsed_seconds": 534.81,
+      "database_connections": {
+        "active": 2,
+        "idle": 6,
+        "idle in transaction": 4
+      },
+      "application_rss_kib": 435408
+    },
+    {
+      "elapsed_seconds": 539.87,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435420
+    },
+    {
+      "elapsed_seconds": 544.9,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435432
+    },
+    {
+      "elapsed_seconds": 549.94,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435432
+    },
+    {
+      "elapsed_seconds": 554.98,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435452
+    },
+    {
+      "elapsed_seconds": 560.03,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435436
+    },
+    {
+      "elapsed_seconds": 565.07,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435436
+    },
+    {
+      "elapsed_seconds": 570.11,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435436
+    },
+    {
+      "elapsed_seconds": 575.18,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435444
+    },
+    {
+      "elapsed_seconds": 580.22,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435456
+    },
+    {
+      "elapsed_seconds": 585.26,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435460
+    },
+    {
+      "elapsed_seconds": 590.3,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435460
+    },
+    {
+      "elapsed_seconds": 595.34,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435460
+    },
+    {
+      "elapsed_seconds": 600.38,
+      "database_connections": {
+        "idle": 12
+      },
+      "application_rss_kib": 435472
+    }
+  ]
+}

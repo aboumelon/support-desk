@@ -13,6 +13,10 @@ Start dispatcher: `uv run --all-extras python -m supportdesk.workers.dispatcher`
 Start worker: `uv run --all-extras celery -A supportdesk.workers.celery_app:app worker -Q ai,ingestion --concurrency=1`.
 From root: `pnpm install --frozen-lockfile`; `pnpm --filter @supportdesk/web dev`.
 Use `http://localhost:5173`; wait for five documents to become ready before opening a new demo.
+After initial setup, `bash scripts/start-local.sh` from the root restarts the local
+containers and supervised application roles and verifies the seeded demo is ready.
+It may replace the previous local supervisor only after validating its command,
+working directory and process group. Logs/PID remain in ignored `.local/`.
 The model provision command may need unsupported host SOCKS proxy environment variables
 removed while retaining the configured HTTP proxy; runtime inference never downloads weights.
 

@@ -1,1 +1,0 @@
-{"root":["./src/main.tsx","./src/features/conversation/desk.tsx","./src/features/knowledge/knowledge.tsx","./src/lib/markdown.tsx","./src/lib/pending-sends.ts","./src/lib/realtime/client.ts","./src/test/markdown.test.tsx","./src/test/realtime.test.ts"],"version":"5.9.3"}

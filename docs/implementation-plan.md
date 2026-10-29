@@ -12,3 +12,11 @@ Authority: [original design](../supportdesk-system-design-v1.md). Root: `/home/a
 | M5 | 40-case evaluation, measured load/recovery, deployment/restore instructions, release evidence | Reproducible reports; 200 connections and specified load; restore drill; browser flows; no unsubstantiated guarantees |
 
 Work in dependency order. A milestone is complete only after its acceptance gates pass. Network calls must remain outside transactions. Preserve the original design. Record deviations in ADRs. No remote publishing or paid service activation.
+
+## Current checkpoint
+
+M0–M4 local acceptance gates passed against PostgreSQL/Redis/Celery and the explicit
+fake provider. M5 local browser, healthy/recovery load, image and DB/file restore
+evidence is recorded. Independent human/blind quality evaluation, an off-host
+encrypted restore and live-provider verification remain unverified. Consult
+`progress.md` and `evidence/release.json` before making a release claim.

@@ -12,16 +12,16 @@ Last updated: 2026-10-29 (Asia/Tehran). Authority: [original design](../supportd
 - M4 core: explicit fixture/live adapters, provisional drafts, citations, conservative usage reservations and bounded retries. Fake-provider tests cover handoff, superseding turns, withdrawal, source replacement, stale leases, invalid citations, budgets and unknown timeout/429/drop usage.
 - Final serialized backend suite: **41 passed in 140.06s**, including the real prefixed Redis/Celery crash/queue recovery, operational metrics, configuration, 200-event replay, multi-tab presence and unauthorized presence checks. The separate prefixed-broker regression also passed (2 cases, 98.71s).
 - Frontend: ESLint, strict TypeScript, four realtime/Markdown safety unit tests, generated contract drift check and production Vite build passed. Route splitting reduces the main bundle below 500 KiB.
-- Playwright: isolated customer/operator contexts completed assistant answer/citation, handoff, claim/reply and refresh persistence; **2 passed in 21.1s**, including direct staff login, offline message recovery, resolve/reopen and public customer chat preserving the actor after refresh. Customer/operator/knowledge screenshots are in `docs/evidence/`.
+- Playwright: isolated customer/operator contexts completed assistant answer/citation, handoff, claim/reply and refresh persistence; **2 passed in 32.1s**, including direct staff login, offline message recovery, resolve/reopen and public customer chat preserving the actor after refresh. Customer/operator/knowledge screenshots are in `docs/evidence/`.
 - API, gateway and CPU worker container builds passed. Non-root worker app startup/E5 inference and Caddy validation passed. Production Compose configuration validation passed without deployment.
 - Restore drill: PostgreSQL restored to a fresh `supportdesk_drill_*_test` in 2.06 seconds using `bash scripts/restore-drill.sh`; all **40 referenced artifact hashes** matched a separate file copy. Off-host encrypted restore remains unverified.
 - Forty-case fixture evaluation: recall@5 **1.0**, fixture handoff **0.975**, zero source-isolation failures, valid source IDs. Original threshold-only handoff was **0.625**; both reports are retained. Human faithfulness ratings and a fresh blind evaluation are uncollected.
 
-## Implemented but awaiting final verification
+## Deployment and verification boundaries
 
 - Assigned/unread inbox filters, expiry cleanup, source/config changes, health degradation and bounded operational metrics passed the final backend regression. Database-backed outbox/job/AI gauges and process-local realtime counters are implemented; first-token timing is logged.
 - Light API/dispatcher and CPU worker Docker targets, private production Compose, Caddy, runtime-role SQL and runbook. Production Compose has not been deployed.
-- The corrected full load run passed: 200 connections, two APIs, 3,194 commands, zero failures, p95 commit 92.36 ms and p95 delivery 430.05 ms. See `evidence/benchmark.md`.
+- The corrected full load run passed: 200 connections, two APIs, 3,192 commands, zero failures, p95 commit 80.26 ms and p95 delivery 416.00 ms. See `evidence/benchmark.md`.
 
 ## Honest failures and corrections
 
@@ -29,12 +29,12 @@ Last updated: 2026-10-29 (Asia/Tehran). Authority: [original design](../supportd
 - Initial Playwright attempts failed while standalone API/worker processes had stopped. A local supervisor now keeps the demo roles together; the subsequent flow passed.
 - First full 200-client benchmark failed: p95 message commit about 50 seconds and p95 delivery about 113 seconds, with 483 send failures. Evidence is retained in `benchmark-before-fixes.json`.
 - Fixes: notify only matching subscriptions; drain outbox in batches; evaluate message quotas within the current DB transaction. Short 200-client rerun had **zero send errors**, p95 commit **276 ms**, p95 delivery **1.21 s**. Idle dispatcher polling was then reduced to 250 ms before the full corrected rerun.
-- Git metadata was initially empty/inaccessible. Authorized local `git init` succeeded outside the restricted mount. The source checkpoint, including both lockfiles, is being prepared after final evidence updates. No remote push or deployment has occurred.
+- Git metadata was initially empty/inaccessible. Authorized local `git init` succeeded outside the restricted mount. Source checkpoint `f4976cceb2e7698f647f3136f98528f80069965f` includes both lockfiles. Final image IDs and verification provenance are recorded in `evidence/release.json`. No remote push or deployment has occurred.
 
 ## Remaining release gates / limitations
 
-- Full healthy-load targets and 200-event replay passed. Actual Redis outage/restart and Celery SIGKILL/lease-expiry/queue-reconstruction tests passed separately. Two short 200-client Redis-outage runs preserved every acknowledged message with no send failures, but failed the 300ms commit p95 target (766ms and 932ms). The latter overlapped backend tests; neither is reported as a passing performance run. Reports are retained. A final isolated healthy-load run remains to be captured after source freeze; performance targets are not capacity guarantees.
-- Record final source commit and tree/lockfile/image hashes. Prefixed broker regression passed.
+- Full healthy-load targets and 200-event replay passed. Actual Redis outage/restart and Celery SIGKILL/lease-expiry/queue-reconstruction tests passed separately. Two short 200-client Redis-outage runs preserved every acknowledged message with no send failures, but failed the 300ms commit p95 target (766ms and 932ms). The latter overlapped backend tests; neither is reported as a passing performance run. Reports are retained. Both final full-duration runs passed: healthy 3,192 sends / zero errors; recovery 3,195 sends / zero errors and all acknowledged messages delivered. Performance targets are not capacity guarantees.
+- Source, tree, lockfile, contract, model, prompt, migration and image identities are recorded in `evidence/release.json`. Final load measurement completed against that source checkpoint before the subsequent user-initiated container stop. The console report and 120 resource samples are retained.
 - PDF page/OCR/byte/encoding and real E5 chunk-window checks passed. Multi-tab presence expiry and authorization passed real Redis/socket tests. Broader PDF fuzzing and full multi-tab UI receipt coverage remain useful release-hardening checks.
 - Retention schedules now cover messages, citations, events, commands, audits, outbox, eligible jobs, withdrawn chunks, demo expiry and orphan files. AI job identity tombstones have an explicit ADR exception. Operational gauges and daily-retention service/timer templates are implemented. Enabling production scheduling, configuring alert/log collection and independent deployment restore timing remain deployment operations.
 - Live provider: **unverified**; no credentials or paid API calls used. Human-rated claim support, untouched blind RAG cases and an off-host encrypted backup drill remain needed before a public release claim.
@@ -76,9 +76,11 @@ frontend 5173, PostgreSQL 55432 and Redis 56379.
 
 ## Next concrete step
 
-Run the final isolated load verification after source freeze, record
-image/lockfile hashes, and leave the supervised demo running at http://localhost:5173.
-A public-release claim still requires the external/unverified gates listed above.
+Collect fresh blind cases and independent human claim-support ratings using the
+evaluation rubric; configure a real encrypted backup destination and time an off-host
+restore before any public release claim. Live-provider verification
+requires separate authorized credentials/budget. The local demo remains the supported
+fixture-mode outcome, with `bash scripts/start-local.sh` to recover after a container stop.
 
 
 ## Final failure/recovery evidence additions
@@ -93,3 +95,13 @@ A public-release claim still requires the external/unverified gates listed above
 - A separate browser CI job starts the real API/dispatcher/Celery roles and pinned E5 fixtures. Its constituent local commands passed; the remote GitHub job is unexecuted because no push was requested.
 
 - Presence now uses a per-conversation sorted-set index instead of scanning Redis globally. Conversation authorization occurs before any ephemeral identity is read or queued.
+
+## Resumed after the user stopped containers
+
+- The completed final ten-minute benchmark was preserved; it was not interrupted by the later stop.
+- PostgreSQL and Redis were restarted with `docker compose -f compose.yaml -f compose.dev.yaml up -d --wait postgres redis`; both are healthy and API readiness reports schema 0007 / Redis ok.
+- Added `bash scripts/start-local.sh` to restart the project-owned application supervisor safely and wait for the seeded app. Browser recovery verification passed: **2 passed in 26.2s** after the container restart. Customer/operator assistant/human flows, offline replay, resolve/reopen and refresh persisted.
+
+- The full ten-minute, 200-client/two-API Redis-outage run passed in isolation from tests/builds: 3,195 sends, zero send failures, all 200 acknowledged-message checks passed, commit p95 110.76ms and delivery p95 488ms (maximum 7.87s). The two earlier short failed measurements are retained. `RECOVERY_DURATION_SECONDS` can explicitly select a shorter diagnostic run; the default now matches the ten-minute scenario.
+
+- Final recovery report: `evidence/benchmark-recovery.json`; terminal report: `evidence/benchmark-recovery-console.txt`. The restart helper stale-PID guard was exercised against an unrelated-command test process; it refused to signal it and preserved the running app.

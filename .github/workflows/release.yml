@@ -9,4 +9,4 @@ jobs:
       - run: docker build --target base -f apps/backend/Dockerfile -t supportdesk-api:${{ github.sha }} .
       - run: docker build --target worker -f apps/backend/Dockerfile -t supportdesk-worker:${{ github.sha }} .
       - run: docker build -f apps/web/Dockerfile -t supportdesk-gateway:${{ github.sha }} .
-      - run: docker run --rm supportdesk-api:${{ github.sha }} python -c 'from supportdesk.main import create_app; assert create_app().title == "SupportDesk"'
+      - run: docker run --rm -e APP_ENV=test supportdesk-api:${{ github.sha }} python -c 'from supportdesk.main import create_app; assert create_app().title == "SupportDesk"'

@@ -58,10 +58,15 @@ only verified fictional fixture content into the new workspace. Customer message
 operator claims/replies, assistant citations, handoff, refresh and reconnect use the real
 PostgreSQL/Redis/Celery backend. Fake answers are deterministic source excerpts.
 
+After the one-time setup, `bash scripts/start-local.sh` starts PostgreSQL/Redis and
+restarts the project's supervised API, dispatcher, worker and frontend together.
+Use it again after stopping the containers. It preserves the existing database/files,
+checks that an old supervisor PID belongs to this project, and waits for readiness.
+
 A 60–90 second walkthrough: start a demo, ask about the trial, open source S1, request a
 human, switch to the operator, claim and reply, refresh the customer, then inspect the
 knowledge page. [UI evidence](docs/evidence/customer-chat.png), [evaluation](docs/evaluation.md)
-and [operations](docs/runbook.md) describe exactly what was checked.
+and [operations](docs/runbook.md) describe exactly what was checked. The [release manifest](docs/evidence/release.json) records the source revision, lockfile hashes, images and verification boundaries.
 
 ## Verification
 

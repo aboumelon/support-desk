@@ -26,7 +26,15 @@ done
 ) &
 outage_pid=$!
 status=0
-DURATION_SECONDS=90 RECOVERY=1 bash scripts/run-benchmark.sh || status=$?
+DURATION_SECONDS="${RECOVERY_DURATION_SECONDS:-600}" RECOVERY=1 bash scripts/run-benchmark.sh || status=$?
 cp .local/benchmark-summary.json docs/evidence/benchmark-recovery.json
 wait "$outage_pid"
+apps/backend/.venv/bin/python - <<'PY'
+import json
+from pathlib import Path
+
+report = json.loads(Path('docs/evidence/benchmark-recovery.json').read_text())
+if report['metrics']['checks']['fails']:
+    raise SystemExit('A client connection, send or acknowledged-delivery check failed')
+PY
 exit "$status"

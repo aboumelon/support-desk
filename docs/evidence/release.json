@@ -1,0 +1,124 @@
+{
+  "runtime_source_commit": "f4976cceb2e7698f647f3136f98528f80069965f",
+  "runtime_source_tree": "55e3442e2cd782f96760f26ebff051f96c46885f",
+  "python": "3.13.14",
+  "lock_and_contract_sha256": {
+    "apps/backend/uv.lock": "208e89cb78e94fd12cdb1408d21b280cfafa100ce74688866971399deb863e40",
+    "pnpm-lock.yaml": "3fc735649dab3554845c8050e4d89cd1562612d160edc6766fd69d76ca2630fd",
+    "contracts/openapi.json": "72850d23a2b67908574c4c63f86d917c4fe18dd65d99bbf22e8b3f5129f363e8",
+    "contracts/realtime.schema.json": "ba9d45ffbf6db3629b1a51cd84bec7e0609670a43b8df430c9ec6f75745dd57a",
+    "scripts/benchmark-realtime.js": "4ec6e63d5b02fba0ecec272098fe1457d186e757af854a647d23a549e33c70b1",
+    "supportdesk-system-design-v1.md": "0486455a90a4b0c61953d4261506fc474c2b888710ce8262c074ec567f4cd4e5",
+    "scripts/run-recovery-benchmark.sh": "be8341ef3281608fab1f08720ba455313b38a2612331c6ca37b5cce1655c1ca1",
+    "scripts/start-local.sh": "4cf083a648d9793f59d7c252c93bcbaedf1dec6965d4affc3371d6e4c5b2b45c",
+    "scripts/sample-benchmark.py": "98b392c0b31cf8e6fba0eae907ca7aa8ca0c95894178075e36284a2c05360e2a"
+  },
+  "embedding_model": "intfloat/multilingual-e5-small",
+  "embedding_revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+  "prompt_version": "answer-v1",
+  "migrations": [
+    "apps/backend/migrations/versions/0001_foundation_identity_and_workspace_.py",
+    "apps/backend/migrations/versions/0002_durable_conversations_messages_events_.py",
+    "apps/backend/migrations/versions/0003_ownership_audit_records.py",
+    "apps/backend/migrations/versions/0004_durable_jobs_and_versioned_knowledge.py",
+    "apps/backend/migrations/versions/0005_actor_role_null_constraint.py",
+    "apps/backend/migrations/versions/0006_assistant_runs_citations_and_.py",
+    "apps/backend/migrations/versions/0007_create_assistant_ledgers_and_source_.py"
+  ],
+  "images": [
+    {
+      "tag": "supportdesk-api:local",
+      "id": "sha256:c7d5b42859fb30270723f879eb14864a828d91bae3184b213d38361faf67470a",
+      "source_revision": "f4976cceb2e7698f647f3136f98528f80069965f"
+    },
+    {
+      "tag": "supportdesk-worker:local",
+      "id": "sha256:b765e00360d16341fc6fd26572c8829f69836d08a975f773b77c300440f38902",
+      "source_revision": "f4976cceb2e7698f647f3136f98528f80069965f"
+    },
+    {
+      "tag": "supportdesk-gateway:local",
+      "id": "sha256:b897ed1df5cdf9fb603ea36ef19e84e1144eb9de7e73b7a5af5373bfeba9bfba",
+      "source_revision": "f4976cceb2e7698f647f3136f98528f80069965f"
+    }
+  ],
+  "verification": {
+    "backend": "41 passed in 140.06s; real PostgreSQL/Redis/Celery, no eager substitute",
+    "frontend": "ESLint, TypeScript, 4 Vitest tests, contract drift and Vite production build passed",
+    "browser": "2 passed in 32.1s; independent staff/customer contexts, citations, offline replay, resolve/reopen, refresh and direct login",
+    "containers": "API/worker/gateway builds; non-root API startup; offline non-root E5 384-dimensional CPU inference; gateway validation passed",
+    "restore": "40 referenced artifact hashes verified in 2.06 seconds locally",
+    "healthy_load": {
+      "source_commit": "f4976cceb2e7698f647f3136f98528f80069965f",
+      "duration_seconds": 600,
+      "clients": 200,
+      "api_instances": 2,
+      "http_commands": 3192,
+      "durable_frames": 3192,
+      "command_rate_per_second": 5.29943126828385,
+      "commit_p95_ms": 80.25603129999999,
+      "delivery_p95_ms": 416,
+      "send_failures": 0,
+      "checks_passed": 3592,
+      "checks_failed": 0,
+      "ws_sessions_including_reconnects": 400,
+      "result": "passed all configured thresholds; console report retained"
+    },
+    "degraded_load": {
+      "duration_seconds": 600,
+      "clients": 200,
+      "api_instances": 2,
+      "redis_outage_seconds": 5,
+      "http_commands": 3195,
+      "command_rate_per_second": 5.2949604407532105,
+      "commit_p95_ms": 110.76918039999975,
+      "delivery_p95_ms": 488,
+      "delivery_max_ms": 7878,
+      "checks_passed": 3795,
+      "checks_failed": 0,
+      "send_failures": 0,
+      "ws_sessions_including_reconnects": 400,
+      "acknowledged_message_check": "all 200 clients confirmed every acknowledged message was received",
+      "result": "passed; previous short failed runs retained"
+    },
+    "commands": [
+      "uv run --all-extras ruff format --check .",
+      "uv run --all-extras ruff check .",
+      "uv run --all-extras mypy src",
+      "uv run --all-extras alembic upgrade head",
+      "uv run --all-extras alembic check",
+      "uv run --all-extras pytest -q --tb=short",
+      "pnpm contracts:check",
+      "pnpm lint",
+      "pnpm typecheck",
+      "pnpm --filter @supportdesk/web test",
+      "pnpm build",
+      "pnpm --filter @supportdesk/web test:e2e",
+      "bash scripts/run-benchmark.sh (isolated services and resource sampler started first)",
+      "bash scripts/restore-drill.sh"
+    ],
+    "browser_after_container_restart": "2 passed in 26.2s; real customer/operator flow after a three-hour container stop"
+  },
+  "unverified": [
+    "live provider (no paid call or credentials)",
+    "fresh blind retrieval cases and human claim-support ratings",
+    "off-host encrypted timed restore and production deployment",
+    "remote CI execution (no push)"
+  ],
+  "postgresql_version": "17.6 (Debian 17.6-1.pgdg12+1)",
+  "migration_head": "0007",
+  "redis_version": "8.0.2",
+  "node": "v24.18.1",
+  "pnpm": "11.20.0",
+  "application_source_trees": {
+    "apps/backend/src": "1a1a8882d2958c5b76baa1020001148b4ab7eeb7",
+    "apps/web/src": "948e1c2f5a13733b141800d8a2a117feb01bd675"
+  },
+  "provenance_note": "Images and final ten-minute load are from runtime_source_commit. Later changes add local restart/resource-sampling helpers, evidence, CI smoke environment and ignored build metadata; backend/frontend application sources are unchanged.",
+  "local_recovery": {
+    "command": "bash scripts/start-local.sh",
+    "containers": "PostgreSQL and Redis running; API schema 0007/Redis ok",
+    "browser_after_restart": "2 passed in 26.2s",
+    "stale_pid_guard": "refused an owned unrelated-command fixture and left it running"
+  }
+}
