@@ -4,6 +4,21 @@ Persian-first support desk implemented from [the original design](supportdesk-sy
 The design is retained unchanged. See [implementation plan](docs/implementation-plan.md),
 [verified progress and remaining work](docs/progress.md), and [bootstrap ADR](docs/adrs/0011-bootstrap-compatibility.md).
 
+```mermaid
+flowchart LR
+    Browser[Persian React UI] -->|REST and WebSocket| API[FastAPI]
+    API --> DB[(PostgreSQL and pgvector)]
+    Dispatcher[Outbox dispatcher] --> DB
+    Dispatcher --> Redis[(Redis)]
+    Redis --> API
+    Redis --> Worker[Celery worker]
+    Worker --> DB
+    Worker --> E5[Pinned local E5]
+    Worker --> Provider[Explicit fake or configured live provider]
+    API --> Files[Private artifacts]
+    Worker --> Files
+```
+
 ## Local development
 
 Requirements: Docker Compose, Python 3.13, uv 0.12.1, Node 24, pnpm 11.20.0.

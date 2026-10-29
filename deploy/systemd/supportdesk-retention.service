@@ -1,0 +1,11 @@
+[Unit]
+Description=SupportDesk daily retention and expired demo cleanup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/supportdesk
+ExecStart=/usr/bin/docker compose --env-file .env.production -f deploy/compose.production.yaml --profile maintenance run --rm purge
+TimeoutStartSec=15min
+UMask=0077

@@ -11,12 +11,19 @@ from sqlalchemy import select
 
 from supportdesk.api.errors import Problem
 from supportdesk.config import get_settings
-from supportdesk.infrastructure.database import Session
-from supportdesk.infrastructure.metrics import open_sockets
+from supportdesk.infrastructure.database import Session, now
+from supportdesk.infrastructure.metrics import (
+    event_lag,
+    open_sockets,
+    replayed_events,
+    socket_connections,
+    socket_overflows,
+)
 from supportdesk.modules.conversations.models import Conversation
 from supportdesk.modules.conversations.service import load_conversation
 from supportdesk.modules.identity.service import resolve, workspace_actor
 from supportdesk.modules.messaging.models import ConversationEvent
+from supportdesk.modules.realtime.presence import update_presence
 from supportdesk.modules.realtime.protocol import (
     AiDelta,
     PresenceUpdate,
@@ -42,19 +49,21 @@ async def serve(
                 workspace_id = principal.actor.workspace_id
             if workspace_id is None:
                 raise Problem(404, "RESOURCE_NOT_FOUND")
-            await workspace_actor(db, principal, workspace_id)
+            connection_actor = await workspace_actor(db, principal, workspace_id)
+            connection_actor_id = connection_actor.id
     except Problem:
         await socket.close(code=1008)
         return
     await socket.accept()
     open_sockets.inc()
+    socket_connections.inc()
     subscriptions: dict[UUID, int] = {}
     queue: asyncio.Queue[str] = asyncio.Queue(maxsize=256)
     buffered_bytes = 0
     wake = asyncio.Event()
     connection_id = uuid4()
     last_typing = 0.0
-    presence_keys: set[str] = set()
+    presence_conversations: set[UUID] = set()
     known_presence: dict[UUID, set[UUID]] = {}
     redis = Redis.from_url(
         settings.redis_url, socket_connect_timeout=2, socket_timeout=3
@@ -65,6 +74,7 @@ async def serve(
         encoded = json.dumps(frame, ensure_ascii=False)
         size = len(encoded.encode())
         if buffered_bytes + size > 1048576 or queue.full():
+            socket_overflows.inc()
             raise Problem(429, "SLOW_CONSUMER")
         queue.put_nowait(encoded)
         buffered_bytes += size
@@ -193,11 +203,15 @@ async def serve(
                 actor = await workspace_actor(db, principal, workspace_id)
                 actor_id, actor_kind = actor.id, actor.kind
             for cid in list(subscriptions):
-                key = f"sd:presence:{workspace_id}:{actor_id}:{connection_id}:{cid}"
+                # Authorize before reading or publishing even ephemeral actor identity.
+                async with Session() as db:
+                    await load_conversation(db, actor, cid)
                 with contextlib.suppress(Exception):
-                    first_seen = key not in presence_keys
-                    await redis.set(key, "1", ex=30)
-                    presence_keys.add(key)
+                    first_seen = cid not in presence_conversations
+                    present = await update_presence(
+                        redis, workspace_id, cid, actor_id, connection_id
+                    )
+                    presence_conversations.add(cid)
                     if first_seen:
                         await redis.publish(
                             f"sd:ephemeral:{workspace_id}",
@@ -208,13 +222,6 @@ async def serve(
                                 online=True,
                             ).model_dump_json(),
                         )
-                with contextlib.suppress(Exception):
-                    present = {
-                        UUID(item.decode().split(":")[-3])
-                        async for item in redis.scan_iter(
-                            match=f"sd:presence:{workspace_id}:*:*:{cid}"
-                        )
-                    }
                     previous = known_presence.get(cid, set())
                     for changed_actor in present ^ previous:
                         enqueue(
@@ -284,6 +291,10 @@ async def serve(
                             }
                         )
                         subscriptions[cid] = event.seq
+                        replayed_events.inc()
+                        event_lag.observe(
+                            max(0, (now() - event.created_at).total_seconds())
+                        )
                     if len(events) < 100:
                         break
                     await asyncio.sleep(0)
@@ -303,25 +314,24 @@ async def serve(
         for task in tasks:
             task.cancel()
         await asyncio.gather(*tasks, return_exceptions=True)
-        for key in presence_keys:
+        for cid in presence_conversations:
             with contextlib.suppress(Exception):
-                await redis.delete(key)
-                parts = key.split(":")
-                cid = UUID(parts[-1])
-                actor_id = UUID(parts[-3])
-                remaining = [
-                    item
-                    async for item in redis.scan_iter(
-                        match=f"sd:presence:{workspace_id}:{actor_id}:*:{cid}"
-                    )
-                ]
+                assert workspace_id is not None
+                remaining = await update_presence(
+                    redis,
+                    workspace_id,
+                    cid,
+                    connection_actor_id,
+                    connection_id,
+                    online=False,
+                )
                 await redis.publish(
                     f"sd:ephemeral:{workspace_id}",
                     PresenceUpdate(
                         type="presence.updated",
                         conversation_id=cid,
-                        actor_id=actor_id,
-                        online=bool(remaining),
+                        actor_id=connection_actor_id,
+                        online=connection_actor_id in remaining,
                     ).model_dump_json(),
                 )
         await redis.aclose()

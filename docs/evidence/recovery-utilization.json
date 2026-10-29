@@ -1,0 +1,192 @@
+{
+  "scope": "sampled application API/dispatcher process RSS (includes shared pages), excludes DB, Redis and k6; local concurrent test load present",
+  "samples": [
+    {
+      "sample_utc": "2026-10-29T07:46:48Z",
+      "database_connections": {
+        "idle": 7,
+        "idle in transaction": 25
+      },
+      "processes": [
+        {
+          "rss_kib": 3664,
+          "command": "bash"
+        },
+        {
+          "rss_kib": 33560,
+          "command": "uv"
+        },
+        {
+          "rss_kib": 33876,
+          "command": "uv"
+        },
+        {
+          "rss_kib": 33924,
+          "command": "uv"
+        },
+        {
+          "rss_kib": 77964,
+          "command": "python3"
+        },
+        {
+          "rss_kib": 124476,
+          "command": "uvicorn"
+        },
+        {
+          "rss_kib": 124160,
+          "command": "uvicorn"
+        }
+      ],
+      "total_application_rss_kib": 431624
+    },
+    {
+      "sample_utc": "2026-10-29T07:46:58Z",
+      "database_connections": {
+        "idle": 12
+      },
+      "processes": [
+        {
+          "rss_kib": 3664,
+          "command": "bash"
+        },
+        {
+          "rss_kib": 33560,
+          "command": "uv"
+        },
+        {
+          "rss_kib": 33876,
+          "command": "uv"
+        },
+        {
+          "rss_kib": 33924,
+          "command": "uv"
+        },
+        {
+          "rss_kib": 77988,
+          "command": "python3"
+        },
+        {
+          "rss_kib": 125880,
+          "command": "uvicorn"
+        },
+        {
+          "rss_kib": 125468,
+          "command": "uvicorn"
+        }
+      ],
+      "total_application_rss_kib": 434360
+    },
+    {
+      "sample_utc": "2026-10-29T07:47:08Z",
+      "database_connections": {
+        "idle": 12
+      },
+      "processes": [
+        {
+          "rss_kib": 3520,
+          "command": "bash"
+        },
+        {
+          "rss_kib": 10168,
+          "command": "uv"
+        },
+        {
+          "rss_kib": 10296,
+          "command": "uv"
+        },
+        {
+          "rss_kib": 10140,
+          "command": "uv"
+        },
+        {
+          "rss_kib": 77924,
+          "command": "python3"
+        },
+        {
+          "rss_kib": 125460,
+          "command": "uvicorn"
+        },
+        {
+          "rss_kib": 125096,
+          "command": "uvicorn"
+        }
+      ],
+      "total_application_rss_kib": 362604
+    },
+    {
+      "sample_utc": "2026-10-29T07:47:18Z",
+      "database_connections": {
+        "idle": 12
+      },
+      "processes": [
+        {
+          "rss_kib": 3520,
+          "command": "bash"
+        },
+        {
+          "rss_kib": 10168,
+          "command": "uv"
+        },
+        {
+          "rss_kib": 10296,
+          "command": "uv"
+        },
+        {
+          "rss_kib": 10140,
+          "command": "uv"
+        },
+        {
+          "rss_kib": 77948,
+          "command": "python3"
+        },
+        {
+          "rss_kib": 125468,
+          "command": "uvicorn"
+        },
+        {
+          "rss_kib": 125116,
+          "command": "uvicorn"
+        }
+      ],
+      "total_application_rss_kib": 362656
+    },
+    {
+      "sample_utc": "2026-10-29T07:47:28Z",
+      "database_connections": {
+        "idle": 11,
+        "idle in transaction": 1
+      },
+      "processes": [
+        {
+          "rss_kib": 3520,
+          "command": "bash"
+        },
+        {
+          "rss_kib": 10168,
+          "command": "uv"
+        },
+        {
+          "rss_kib": 10296,
+          "command": "uv"
+        },
+        {
+          "rss_kib": 10140,
+          "command": "uv"
+        },
+        {
+          "rss_kib": 77960,
+          "command": "python3"
+        },
+        {
+          "rss_kib": 125544,
+          "command": "uvicorn"
+        },
+        {
+          "rss_kib": 125228,
+          "command": "uvicorn"
+        }
+      ],
+      "total_application_rss_kib": 362856
+    }
+  ]
+}

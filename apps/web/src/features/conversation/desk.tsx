@@ -58,6 +58,11 @@ export function Desk({
       return result.data;
     },
   });
+  useEffect(() => {
+    // Preserve the opened transcript when its status leaves the filtered inbox.
+    if (selected === null && conversations.data?.[0])
+      setSelected(conversations.data[0].id);
+  }, [selected, conversations.data]);
   const current = selected ?? conversations.data?.[0]?.id;
   async function create() {
     setBusy(true);

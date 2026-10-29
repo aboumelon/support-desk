@@ -1,6 +1,9 @@
 {
-  "restored_artifacts": 10,
-  "hashes_verified": 10,
-  "database": "supportdesk_restore_test",
-  "off_host_encrypted_restore": "not performed"
+  "database": "supportdesk_drill_20261029074806_test",
+  "restored_artifacts": 40,
+  "hashes_verified": 40,
+  "local_duration_seconds": 2.06,
+  "off_host_encrypted_restore": "not performed",
+  "command": "bash scripts/restore-drill.sh",
+  "purge_policy": "Do not run purges while taking the DB/file snapshot"
 }

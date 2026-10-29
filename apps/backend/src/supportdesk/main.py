@@ -16,7 +16,11 @@ from supportdesk.api.errors import Problem, problem_handler
 from supportdesk.config import get_settings
 from supportdesk.infrastructure.database import Session
 from supportdesk.infrastructure.logging import configure_logging
-from supportdesk.infrastructure.metrics import http_latency, http_requests
+from supportdesk.infrastructure.metrics import (
+    http_latency,
+    http_requests,
+    operational_metrics,
+)
 from supportdesk.modules.conversations.routes import router as conversation_router
 from supportdesk.modules.identity.routes import router
 from supportdesk.modules.knowledge.routes import router as knowledge_router
@@ -90,7 +94,10 @@ def create_app() -> FastAPI:
 
     @app.get("/metrics", include_in_schema=False)
     async def metrics() -> Response:
-        return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
+        return Response(
+            generate_latest() + await operational_metrics(),
+            media_type=CONTENT_TYPE_LATEST,
+        )
 
     @app.get("/api/v1/health/live")
     async def live() -> dict[str, str]:

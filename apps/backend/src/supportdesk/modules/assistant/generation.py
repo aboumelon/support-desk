@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from supportdesk.config import get_settings
 from supportdesk.infrastructure.database import now
+from supportdesk.infrastructure.logging import job_event
 from supportdesk.infrastructure.worker_database import worker_engine
 from supportdesk.modules.assistant.embeddings.e5 import encode
 from supportdesk.modules.assistant.finalization import emit, finish
@@ -175,6 +176,7 @@ def generate(job_id: UUID, token: UUID) -> None:
     answer = ""
     input_tokens = output_tokens = None
     started = time.monotonic()
+    first_token = True
     redis = Redis.from_url(
         settings.redis_url, socket_connect_timeout=1, socket_timeout=1
     )
@@ -185,6 +187,15 @@ def generate(job_id: UUID, token: UUID) -> None:
             if delta.input_tokens is not None:
                 input_tokens, output_tokens = delta.input_tokens, delta.output_tokens
             if delta.text:
+                if first_token:
+                    job_event(
+                        "ai.first_token",
+                        job_id=str(job_id),
+                        run_id=str(run_id),
+                        attempt=attempt,
+                        seconds=time.monotonic() - started,
+                    )
+                    first_token = False
                 # Check lease and epoch before each provisional publication.
                 with Session(worker_engine()) as db:
                     current_job = db.get(Job, job_id)

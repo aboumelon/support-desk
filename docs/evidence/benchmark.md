@@ -39,3 +39,21 @@ Separate reliability tests exercise two actual API processes, a lost last notifi
 real Redis outage/restart and an actual Celery SIGKILL followed by lease expiry and
 queue reconstruction. Recovery/load behavior beyond the tested scenario is not a
 high-availability or production capacity guarantee.
+
+## Additional outage measurements
+
+`bash scripts/run-recovery-benchmark.sh` provisions its own Redis on loopback 56381,
+two API processes and 200 clients. It stops Redis for five seconds, reconnects all
+clients and checks that every acknowledged message has arrived. The short runs retained
+in `benchmark-recovery-before-presence.json` and `benchmark-recovery.json` had no send
+failures or missing acknowledged messages, but failed the unchanged 300ms commit p95
+gate (766.05ms and 932.28ms). Delivery maxima were 7.32s and 8.24s, below the explicitly
+different degraded-mode recovery limit of 20s. These are correctness passes and overall
+benchmark failures. The second run overlapped backend tests on the same development
+host. `recovery-utilization.json` records sampled process RSS and DB connection counts;
+it is neither a peak-memory estimate nor isolated production sizing evidence.
+
+Presence enumeration was changed from a global Redis scan to an expiring per-conversation
+index. Multi-tab expiry and an unauthorized visitor subscription have real Redis/socket
+regressions. The short outage results do not establish that this change fixes all latency
+under degradation.

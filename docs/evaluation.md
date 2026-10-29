@@ -24,5 +24,5 @@ test checks live delivery, a lost final notification and replay after reconnect.
 
 The k6 benchmark uses 200 isolated sessions, two API replicas, a dedicated database and
 Redis broker namespace, ten minutes of normal traffic, a short burst and reconnect wave.
-See the measured benchmark evidence once the run finishes. Development-host measurements
+The corrected full run passed; see `evidence/benchmark.md` and `benchmark-final.json`. Development-host measurements
 are not deployment capacity guarantees.

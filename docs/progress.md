@@ -10,16 +10,16 @@ Last updated: 2026-10-29 (Asia/Tehran). Authority: [original design](../supportd
 - M2 core gates: competing claims; real two-API delivery; lost final notification repaired without a later event; reconnect replay; bounded sender; inbox/ownership UI. Real Redis/Celery ingestion and duplicate dispatch also verified.
 - M3 core: private bounded uploads, immutable versions, ready-only pgvector retrieval, replacement-pending and withdrawal behavior. Pinned E5 revision `614241f622f53c4eeff9890bdc4f31cfecc418b3`; actual CPU inference produces 384 dimensions.
 - M4 core: explicit fixture/live adapters, provisional drafts, citations, conservative usage reservations and bounded retries. Fake-provider tests cover handoff, superseding turns, withdrawal, source replacement, stale leases, invalid citations, budgets and unknown timeout/429/drop usage.
-- Full serialized backend suite: **34 passed in 161.91s**. Subsequent focused checks passed: 12 assistant cases including exhausted-crash recovery, five identity cases, two configuration cases and 200-event replay below three seconds.
+- Final serialized backend suite: **41 passed in 140.06s**, including the real prefixed Redis/Celery crash/queue recovery, operational metrics, configuration, 200-event replay, multi-tab presence and unauthorized presence checks. The separate prefixed-broker regression also passed (2 cases, 98.71s).
 - Frontend: ESLint, strict TypeScript, four realtime/Markdown safety unit tests, generated contract drift check and production Vite build passed. Route splitting reduces the main bundle below 500 KiB.
-- Playwright: isolated customer/operator contexts completed assistant answer/citation, handoff, claim/reply and refresh persistence; **2 passed in 14.1s**, including direct staff login and public customer chat preserving the actor after refresh. Customer/operator/knowledge screenshots are in `docs/evidence/`.
+- Playwright: isolated customer/operator contexts completed assistant answer/citation, handoff, claim/reply and refresh persistence; **2 passed in 21.1s**, including direct staff login, offline message recovery, resolve/reopen and public customer chat preserving the actor after refresh. Customer/operator/knowledge screenshots are in `docs/evidence/`.
 - API, gateway and CPU worker container builds passed. Non-root worker app startup/E5 inference and Caddy validation passed. Production Compose configuration validation passed without deployment.
-- Restore drill: PostgreSQL restored to `supportdesk_restore_test`; all **10 referenced artifact hashes** matched a separate file copy. Off-host encrypted restore remains unverified.
+- Restore drill: PostgreSQL restored to a fresh `supportdesk_drill_*_test` in 2.06 seconds using `bash scripts/restore-drill.sh`; all **40 referenced artifact hashes** matched a separate file copy. Off-host encrypted restore remains unverified.
 - Forty-case fixture evaluation: recall@5 **1.0**, fixture handoff **0.975**, zero source-isolation failures, valid source IDs. Original threshold-only handoff was **0.625**; both reports are retained. Human faithfulness ratings and a fresh blind evaluation are uncollected.
 
 ## Implemented but awaiting final verification
 
-- Assigned/unread inbox filters, expiry cleanup, source/config changes, health degradation and bounded operational metrics have been implemented; final regression sweep pending.
+- Assigned/unread inbox filters, expiry cleanup, source/config changes, health degradation and bounded operational metrics passed the final backend regression. Database-backed outbox/job/AI gauges and process-local realtime counters are implemented; first-token timing is logged.
 - Light API/dispatcher and CPU worker Docker targets, private production Compose, Caddy, runtime-role SQL and runbook. Production Compose has not been deployed.
 - The corrected full load run passed: 200 connections, two APIs, 3,194 commands, zero failures, p95 commit 92.36 ms and p95 delivery 430.05 ms. See `evidence/benchmark.md`.
 
@@ -33,10 +33,10 @@ Last updated: 2026-10-29 (Asia/Tehran). Authority: [original design](../supportd
 
 ## Remaining release gates / limitations
 
-- Full healthy-load targets and 200-event replay passed. Actual Redis outage/restart and Celery SIGKILL/lease-expiry/queue-reconstruction tests passed separately. Combined degradation under the full 200-client workload remains a broader resilience check; performance targets are not capacity guarantees.
-- Record final source commit and tree/lockfile/image hashes; verify the final prefixed broker regression and final source checkpoint.
-- PDF page/OCR/byte/encoding and real E5 chunk-window checks passed. Broader PDF fuzzing and multi-tab UI receipt/presence coverage remain useful release-hardening checks.
-- Retention schedules now cover messages, citations, events, commands, audits, outbox, eligible jobs, withdrawn chunks, demo expiry and orphan files. AI job identity tombstones have an explicit ADR exception. Full operational job/outbox/AI metrics, independent deployment restore timing and production scheduling remain release operations.
+- Full healthy-load targets and 200-event replay passed. Actual Redis outage/restart and Celery SIGKILL/lease-expiry/queue-reconstruction tests passed separately. Two short 200-client Redis-outage runs preserved every acknowledged message with no send failures, but failed the 300ms commit p95 target (766ms and 932ms). The latter overlapped backend tests; neither is reported as a passing performance run. Reports are retained. A final isolated healthy-load run remains to be captured after source freeze; performance targets are not capacity guarantees.
+- Record final source commit and tree/lockfile/image hashes. Prefixed broker regression passed.
+- PDF page/OCR/byte/encoding and real E5 chunk-window checks passed. Multi-tab presence expiry and authorization passed real Redis/socket tests. Broader PDF fuzzing and full multi-tab UI receipt coverage remain useful release-hardening checks.
+- Retention schedules now cover messages, citations, events, commands, audits, outbox, eligible jobs, withdrawn chunks, demo expiry and orphan files. AI job identity tombstones have an explicit ADR exception. Operational gauges and daily-retention service/timer templates are implemented. Enabling production scheduling, configuring alert/log collection and independent deployment restore timing remain deployment operations.
 - Live provider: **unverified**; no credentials or paid API calls used. Human-rated claim support, untouched blind RAG cases and an off-host encrypted backup drill remain needed before a public release claim.
 - A local working demo is available; **M0–M5 are not declared fully complete while the above required gates remain**.
 
@@ -76,8 +76,8 @@ frontend 5173, PostgreSQL 55432 and Redis 56379.
 
 ## Next concrete step
 
-Finish the prefixed broker regression, freeze the source checkpoint, record final verification
-and image/lockfile hashes, and leave the supervised demo running at http://localhost:5173.
+Run the final isolated load verification after source freeze, record
+image/lockfile hashes, and leave the supervised demo running at http://localhost:5173.
 A public-release claim still requires the external/unverified gates listed above.
 
 
@@ -88,3 +88,8 @@ A public-release claim still requires the external/unverified gates listed above
 - One full test invocation overlapped a separate fixture-truncating test invocation, causing test-database interference. A session-wide PostgreSQL advisory lock now serializes pytest invocations; the subsequent full suite passed.
 - Safe Markdown disables raw HTML and unsafe URL schemes, with passing renderer tests. Public/staff routes and canonical assistant-setting bootstrap are implemented.
 - Demo recording: `evidence/demo.webm` (26.52 seconds, automated real customer flow). Screenshots and the longer manual walkthrough are linked from README.
+
+- Expanded browser checks exposed a resolved transcript disappearing with its filtered inbox row. Selection now persists; offline delivery, resolve/reopen and refresh checks passed afterward.
+- A separate browser CI job starts the real API/dispatcher/Celery roles and pinned E5 fixtures. Its constituent local commands passed; the remote GitHub job is unexecuted because no push was requested.
+
+- Presence now uses a per-conversation sorted-set index instead of scanning Redis globally. Conversation authorization occurs before any ephemeral identity is read or queued.

@@ -1,4 +1,5 @@
 import { defineConfig } from "@playwright/test";
+import { existsSync } from "node:fs";
 export default defineConfig({
   testDir: "e2e",
   workers: 1,
@@ -9,7 +10,11 @@ export default defineConfig({
     timezoneId: "Asia/Tehran",
     viewport: { width: 1365, height: 1000 },
     launchOptions: {
-      executablePath: process.env.CHROME_PATH ?? "/usr/bin/google-chrome",
+      executablePath:
+        process.env.CHROME_PATH ??
+        (existsSync("/usr/bin/google-chrome")
+          ? "/usr/bin/google-chrome"
+          : undefined),
       args: ["--no-sandbox"],
     },
     trace: "retain-on-failure",

@@ -53,6 +53,28 @@ test("isolated customer and operator complete persistent assistant and human cha
   await expect(
     page.getByText("پاسخ کارشناس برای آزمون ماندگاری", { exact: true }),
   ).toBeVisible();
+  await page.context().setOffline(true);
+  await staff
+    .getByRole("textbox", { name: "پیام", exact: true })
+    .fill("پیام هنگام قطع اتصال مشتری");
+  await staff.getByRole("button", { name: "ارسال ↑", exact: true }).click();
+  await expect(
+    staff.getByText("پیام هنگام قطع اتصال مشتری", { exact: true }),
+  ).toBeVisible();
+  await page.context().setOffline(false);
+  await expect(
+    page.getByText("پیام هنگام قطع اتصال مشتری", { exact: true }),
+  ).toBeVisible({ timeout: 20000 });
+  await staff
+    .getByRole("button", { name: "پایان گفت‌وگو", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "بازگشایی", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "بازگشایی", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "بازگشایی", exact: true }),
+  ).not.toBeVisible();
   await page.reload();
   await expect(
     page.getByText("پاسخ کارشناس برای آزمون ماندگاری", { exact: true }),

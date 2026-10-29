@@ -1,0 +1,10 @@
+[Unit]
+Description=Run SupportDesk retention daily
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=15min
+
+[Install]
+WantedBy=timers.target
