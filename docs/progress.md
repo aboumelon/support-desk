@@ -2,6 +2,38 @@
 
 Last updated: 2026-10-30 (Asia/Tehran). Authority: [original design](../supportdesk-system-design-v1.md).
 
+## First-deployment private configuration helper (2026-10-30)
+
+- The user created a Freestyle Ubuntu VM and cloned the repository; startup correctly
+  refused to run before `.env.production` existed. Added a dependency-free Python 3
+  helper so the initial file can be generated with one hostname argument, without
+  copying developer credentials or manually duplicating database passwords.
+- The helper derives the release/HTTPS Origin, generates distinct 64-character owner,
+  runtime and session secrets, writes mode 0600 with atomic exclusive creation and
+  refuses to overwrite an existing file. AI remains explicitly simulated initially.
+  Optional verified proxy addresses are validated; default loopback trust supports
+  private bootstrap and must be reviewed against the real ingress before public use.
+- Passed helper Ruff formatting/lint and temporary-file verification: production
+  Settings valid; Compose config valid; secrets not printed; three secrets distinct;
+  existing bytes preserved on repeat; invalid hostnames and universal proxy CIDRs
+  rejected; explicit verified proxy override retained. No application schema/contracts
+  or dependencies changed, so broader application tests were not repeated.
+- Replaced the long inline setup example with the helper and a variable reference
+  table in the Freestyle guide. Also documented the observed Node proxy login issue:
+  direct dashboard timeout, proxy path reachable, cached team refresh successful.
+  No credential values, actual cloud VM IDs or cloud changes were published by this fix.
+
+```bash
+# Inside the user's VM checkout, after pulling the updated main branch:
+python3 scripts/prepare-production-env.py --domain YOUR_HOSTNAME
+PORTFOLIO_ENV_FILE=.env.production bash scripts/production-start.sh
+```
+
+Local validation command: `uv run --locked ruff check ../../scripts/prepare-production-env.py`
+from `apps/backend`, plus an isolated temporary-file/Settings/Compose exercise. Server
+bootstrap and actual domain routing remain user-operated host checks; the helper only
+writes local private configuration and makes no network requests.
+
 ## GitHub publication and Freestyle operator guide (2026-10-30)
 
 - The user explicitly authorized publication to `git@github.com:aboumelon/support-desk.git`.

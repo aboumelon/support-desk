@@ -51,7 +51,11 @@ For the complete operator sequence from VM creation to HTTPS routing, start with
 operations and failure handling after the host/configuration inputs are available.
 
 Use `deploy/compose.production.yaml` and a private file based on
-`deploy/production.env.example`. The exact startup procedure is:
+`deploy/production.env.example`. For a new Freestyle deployment,
+`python3 scripts/prepare-production-env.py --domain YOUR_HOSTNAME` creates private
+configuration with distinct generated secrets and refuses overwrite. Verify actual
+ingress proxy trust before public routing. Existing installations retain their file
+and database passwords. The exact startup procedure is:
 
 ```bash
 PORTFOLIO_ENV_FILE=.env.production bash scripts/production-start.sh
