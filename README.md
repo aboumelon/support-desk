@@ -16,6 +16,8 @@ a small authorized [live Token Factory evaluation](docs/live-provider-verificati
 now passes. Freestyle deployment and public-provider activation remain unverified. See the
 [portfolio handoff](docs/portfolio-release.md) for official provider terms, production
 startup, trusted proxies, backup/restore, rollback and missing host inputs.
+For step-by-step VM, private configuration and HTTPS commands, use the
+[Freestyle deployment guide](docs/freestyle-deploy.md).
 
 ```mermaid
 flowchart LR

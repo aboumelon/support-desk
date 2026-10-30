@@ -46,6 +46,10 @@ database timestamps and are not provider percentile measurements.
 
 ## Production preparation
 
+For the complete operator sequence from VM creation to HTTPS routing, start with the
+[Freestyle deployment guide](freestyle-deploy.md). This runbook describes application
+operations and failure handling after the host/configuration inputs are available.
+
 Use `deploy/compose.production.yaml` and a private file based on
 `deploy/production.env.example`. The exact startup procedure is:
 

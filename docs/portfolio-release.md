@@ -2,7 +2,9 @@
 
 Status: implemented locally; a small authorized Token Factory evaluation is verified.
 Deployment-host and public-provider activation gates remain open. No Freestyle resource,
-public endpoint, remote push or paid service was activated.
+public endpoint or paid service was activated. The source is now published on
+[GitHub](https://github.com/aboumelon/support-desk); see the concrete
+[Freestyle deployment guide](freestyle-deploy.md).
 Earlier container source/images: `aadc8f3661145e50613959bf5901c6fd5ba6494f`.
 Those images predate the live prompt corrections; rebuild from the intended current
 source before rollout. Historical identities: [portfolio evidence](evidence/portfolio.json).

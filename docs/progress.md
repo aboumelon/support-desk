@@ -2,6 +2,40 @@
 
 Last updated: 2026-10-30 (Asia/Tehran). Authority: [original design](../supportdesk-system-design-v1.md).
 
+## GitHub publication and Freestyle operator guide (2026-10-30)
+
+- The user explicitly authorized publication to `git@github.com:aboumelon/support-desk.git`.
+  SSH access succeeded and the repository was empty. Current workspace UI refinements
+  and accumulated verification notes were committed as `3ee2771`; `main` was advanced
+  without discarding history and pushed normally. No force push was used.
+- Before publishing, all 424 reachable Git blobs were checked against configured
+  private key/session/database values, with no matches. `.env`, `.env.production`,
+  local sessions/data/models and dependencies are ignored and untracked. Unrelated
+  untracked `skills/` remains outside the commit and push.
+- Added [step-by-step Freestyle instructions](freestyle-deploy.md): persistent Ubuntu
+  VM, current CLI, repository/private archive transfer, 0600 production configuration,
+  full Compose bootstrap, HTTPS port 8080 routing, lifecycle/quota limits, separate
+  production accounts, permitted provider activation and volume-preserving updates.
+  Official docs and the actual `freestyle@0.2.21 vm update --help` were checked.
+- The guide's configuration example was executed in a temporary directory: production
+  Settings and Compose validation passed, file mode was 0600, generated secret values
+  were not printed, a second run refused overwrite and universal proxy trust was rejected.
+  Temporary validation did not start containers or contact a cloud account.
+- Existing frontend/browser/backend results above and below remain tied to their source
+  checkpoints; publishing does not establish a remote CI pass, host performance or a
+  deployed release. No Freestyle login/resource/domain operation, public deployment or
+  paid activation occurred. Actual ingress CIDRs, domain/account and host checks remain
+  operator inputs; Token Factory public-use permission remains unresolved.
+
+Publication commands:
+
+```bash
+git ls-remote git@github.com:aboumelon/support-desk.git
+git remote add origin git@github.com:aboumelon/support-desk.git
+git push -u origin main
+git ls-remote --symref origin HEAD refs/heads/main
+```
+
 ## Shared customer entry on home (2026-10-30)
 
 - Added Persian customer entry beside staff login, linking `/chat/tarvio-demo`, and
