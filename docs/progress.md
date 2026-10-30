@@ -8,7 +8,7 @@ Last updated: 2026-10-30 (Asia/Tehran). Authority: [original design](../supportd
 - [x] Compatible single-system prompts, strict streamed-provider parsing, bounded timeout/retry/usage accounting and opt-in live evaluation.
 - [x] Shared atomic AI budget/admission, global ingestion/storage/demo limits, trusted proxy handling and scheduled expiry cleanup.
 - [x] Complete-stack Freestyle package, restricted roles, health/startup/recovery, backup and rollback instructions.
-- [ ] Final image revision/startup check and machine-readable handoff evidence.
+- [x] Final image revision/startup check and machine-readable handoff evidence.
 
 Implemented behavior and host instructions: [portfolio handoff](portfolio-release.md).
 Current UI mappings/screenshots: [frontend integration](frontend-integration.md).
@@ -43,6 +43,8 @@ pnpm --filter @supportdesk/web test:e2e --grep 'desktop/tablet/mobile'
 bash scripts/start-local.sh
 docker compose --env-file .local/portfolio.production.env -f deploy/compose.production.yaml config --quiet
 docker compose --env-file .local/portfolio.production.env -f deploy/compose.production.yaml build api worker gateway
+PORTFOLIO_ENV_FILE=.local/portfolio.production.env bash scripts/production-start.sh
+docker compose --env-file .local/portfolio.production.env -f deploy/compose.production.yaml exec -T gateway caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile
 UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked --project apps/backend --all-extras python scripts/verify-production-stack.py
 UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked --project apps/backend --all-extras python scripts/verify-production-stack.py --resume
 PORTFOLIO_ENV_FILE=.local/portfolio.production.env ALLOW_UNENCRYPTED_LOCAL_BACKUP=1 bash scripts/production-backup.sh
@@ -78,6 +80,26 @@ initially omitted shared symlink blobs; dereferencing them fixed pinned provisio
 The isolated Docker network initially collided with the fixed gateway and then chose
 the test edge address as bridge; explicit dynamic range and bridge settings corrected
 both, followed by actual bucket/restart verification. No development data was truncated.
+
+Final source checkpoint: `aadc8f3661145e50613959bf5901c6fd5ba6494f` on local
+`codex/tarvio-frontend`. The complete `production-start.sh` procedure passed against
+that source, including all three revision-labeled images, roles, model provisioning,
+fixture readiness and gateway. The fresh container smoke and persisted-message resume
+passed again. Caddy validation passed inside the running gateway; an auxiliary
+`compose run gateway` validation attempt conflicted with the active gateway's fixed
+IP, so the correct `compose exec -T gateway caddy validate ...` check was used.
+Image IDs, file/lock/design hashes, screenshots and boundaries are recorded in
+[the current manifest](evidence/portfolio.json). Final documentation/evidence follow
+in a separate local commit; application source and images use the checkpoint above.
+Ordinary fake generation was restored with `bash scripts/start-local.sh`; API readiness
+is schema 0008 / Redis ok and frontend 5173 is available. No new load benchmark was run.
+The isolated verification containers/network were stopped afterward with
+`docker compose --env-file .local/portfolio.production.env -f deploy/compose.production.yaml down --remove-orphans`;
+all four named volumes, private backup and restored test data were preserved. The main
+development PostgreSQL/Redis/application remain running. Source-only ZIP/tar exports
+are created from the final local Git revision under ignored `.local/exports/`; dependencies,
+credentials, sessions, model weights, databases, local artifacts and unrelated `skills/`
+are excluded. Both lockfiles and `.env.example` templates remain in the source package.
 
 Remaining public-release inputs/gates: authorized Freestyle VM/account/domain and actual
 edge CIDRs/firewall; private production secrets; provider key/base/model/context and

@@ -1,7 +1,9 @@
 # Tarvio portfolio demo preparation
 
-Status: implemented locally; fresh verification and final evidence are being recorded.
+Status: implemented and verified locally; live-provider and deployment-host gates remain open.
 No Freestyle resource, public endpoint, remote push, paid service or live provider was activated.
+Source/images: `aadc8f3661145e50613959bf5901c6fd5ba6494f`.
+Machine-readable hashes and image identities: [portfolio evidence](evidence/portfolio.json).
 
 ## Focused product changes
 
@@ -113,6 +115,12 @@ model volume, private network and loopback port 5182. Its generated secret file 
 sessions remain ignored under `.local/`. It does not truncate development data. A cached
 model copy must dereference shared blob links, or include their backing blob directory;
 a shallow cache-directory copy is insufficient.
+
+The complete startup script passed locally at the source revision above. All three
+image labels match it; API/gateway/PostgreSQL/Redis were healthy and supervised roles
+were running. A fresh full HTTP/ingestion/WebSocket smoke and a persisted-message
+resume passed after replacing the application images. This is local container proof,
+not an actual Freestyle deployment or a public HTTPS test.
 
 ## Freestyle handoff
 

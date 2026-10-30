@@ -1,0 +1,413 @@
+{
+  "recorded_at": "2026-10-30T08:49:10.664976+00:00",
+  "source_revision": "aadc8f3661145e50613959bf5901c6fd5ba6494f",
+  "source_tree": "2e9d1aba560aa62dfd79c70207ceb66c149b3bc9",
+  "branch": "codex/tarvio-frontend",
+  "evidence_note": "Documentation-only follow-up; tested application source and image labels refer to source_revision.",
+  "file_hashes": {
+    "supportdesk-system-design-v1.md": "0486455a90a4b0c61953d4261506fc474c2b888710ce8262c074ec567f4cd4e5",
+    "pnpm-lock.yaml": "ce13cb37ffcf671a885a72097efbe987aa8a1c773166e10caea0e5088bcd52f1",
+    "apps/backend/uv.lock": "208e89cb78e94fd12cdb1408d21b280cfafa100ce74688866971399deb863e40",
+    "contracts/openapi.json": "cf87b2e1a98d4d077ee0e5fd1fc8c21bba777d1ccc007b672889747a61a66c96",
+    "contracts/realtime.schema.json": "ba9d45ffbf6db3629b1a51cd84bec7e0609670a43b8df430c9ec6f75745dd57a",
+    "evals/rag/cases.jsonl": "bac689bd9428f89dcf536b60ebf28c6595dd7cf779273813c1692e9a10d597ca",
+    "docs/evidence/rag-portfolio.json": "c083e3f430f22fac583d77c074eefbe7a4bc9485d005fbc73d9f57c3e063eda9",
+    "apps/web/public/fonts/Estedad-LICENSE.txt": "e0ef57154d4ecbe3b5fb27dd9c1ef1fc057a9d70cda84692dfad68586d204409",
+    "apps/web/public/fonts/Inter-LICENSE.txt": "3b0a5fca3d17942cde889069889dedbbbd075e9b599968c82a95f4d944e9b345"
+  },
+  "original_design_and_lockfiles_unchanged": true,
+  "images": [
+    {
+      "tag": "supportdesk-api:aadc8f3661145e50613959bf5901c6fd5ba6494f",
+      "id": "sha256:6e86fd8b825bc82f591279d58e6aeaf7519f97b5e6b111a50cac15d367f34b9b",
+      "revision": "aadc8f3661145e50613959bf5901c6fd5ba6494f",
+      "size_bytes": 378708878
+    },
+    {
+      "tag": "supportdesk-worker:aadc8f3661145e50613959bf5901c6fd5ba6494f",
+      "id": "sha256:649c34ef0dc61d869bc67be2fd28ea6e5a5ddbe6339c53361a3e86ff9502fe97",
+      "revision": "aadc8f3661145e50613959bf5901c6fd5ba6494f",
+      "size_bytes": 1832914954
+    },
+    {
+      "tag": "supportdesk-gateway:aadc8f3661145e50613959bf5901c6fd5ba6494f",
+      "id": "sha256:a4f8d8c86adb2caf10e6f9fde1eae5352eb26858d98684adf76e38e3cc0f22d8",
+      "revision": "aadc8f3661145e50613959bf5901c6fd5ba6494f",
+      "size_bytes": 84761044
+    }
+  ],
+  "checks": [
+    {
+      "cwd": "apps/backend",
+      "command": "uv run --locked --all-extras pytest -q",
+      "result": "passed",
+      "tests": 73,
+      "duration_seconds": 153.68,
+      "database": "dedicated PostgreSQL supportdesk_test",
+      "redis_database": 15,
+      "console_sha256": "6e13b5adcfae01cf6349fa5be9db5fb7868d17fb8c4ac71802dc7a49579723f6"
+    },
+    {
+      "cwd": "apps/backend",
+      "commands": [
+        "uv run --locked ruff format --check .",
+        "uv run --locked ruff check .",
+        "uv run --locked mypy src",
+        "uv run --locked alembic check"
+      ],
+      "result": "passed",
+      "formatted_files": 92,
+      "typed_source_files": 64,
+      "schema": "0008_portfolio_limits_and_search"
+    },
+    {
+      "command": "pnpm exec prettier --check apps/web/src apps/web/e2e apps/web/index.html apps/web/package.json",
+      "result": "passed"
+    },
+    {
+      "commands": [
+        "pnpm lint",
+        "pnpm typecheck",
+        "pnpm --filter @supportdesk/web test",
+        "pnpm contracts:check",
+        "pnpm build"
+      ],
+      "result": "passed",
+      "unit_tests": 7,
+      "build_note": "Two nonfatal upstream Zod pure-annotation warnings; no performance target claimed."
+    },
+    {
+      "command": "FAKE_SCENARIO=slow bash scripts/start-local.sh; pnpm --filter @supportdesk/web test:e2e",
+      "result": "passed",
+      "tests": 8,
+      "reported_duration": "1.9m",
+      "generation": "explicit fake; actual PostgreSQL/Redis/Celery/E5",
+      "console_sha256": "2592fa44c47cb4f075c8c9cce771df3e9a3a59483a858172b7ff43ac9e5218bc",
+      "capability_test_boundary": "Entry display failure/disabled/live-capability cases stub capabilities only."
+    },
+    {
+      "command": "pnpm --filter @supportdesk/web test:e2e --grep 'desktop/tablet/mobile'",
+      "result": "passed",
+      "tests": 1,
+      "duration_seconds": 25.0,
+      "note": "Final title direction and search-placeholder adjustment; screenshot paths separated from historical evidence."
+    },
+    {
+      "command": "uv run --locked --all-extras python -m supportdesk.cli.evaluate_rag",
+      "cwd": "apps/backend",
+      "result": "passed",
+      "cases": 40,
+      "recall_at_5": 1.0,
+      "correct_handoff_rate": 0.975,
+      "source_isolation_failures": 0,
+      "source_id_validity": true,
+      "generation": "deterministic fixture excerpts"
+    },
+    {
+      "command": "PORTFOLIO_ENV_FILE=.local/portfolio.production.env bash scripts/production-start.sh",
+      "result": "passed",
+      "roles": [
+        "gateway",
+        "api",
+        "dispatcher",
+        "worker",
+        "postgres",
+        "redis",
+        "retention"
+      ],
+      "model": "Pinned E5 cache explicitly provisioned before serving; separate offline provisioning also passed",
+      "fixtures": "Exact five current content hashes ready",
+      "console_sha256": "f2ad8eb67604f31773ec6a16ba69e7268f3a47d20e3a09be6f71aa86503c5b45"
+    },
+    {
+      "command": "uv run --locked --project apps/backend --all-extras python scripts/verify-production-stack.py",
+      "result": "passed",
+      "details": {
+        "mode": "real isolated production-shaped stack; explicit fake LLM",
+        "http_origin_simulation": "Secure cookie flags and exact HTTPS Origin validated over a loopback HTTP transport; public TLS not verified",
+        "customer_staff_messaging": "passed",
+        "single_message_retry": "passed",
+        "assistant_citation": "passed",
+        "handoff_claim_resolve_reopen": "passed",
+        "ingestion_withdrawal": "passed",
+        "caddy_websocket_replay": {
+          "events": 10,
+          "ordered": true
+        },
+        "distinct_proxy_rate_buckets": "passed",
+        "persisted_messages": 3
+      }
+    },
+    {
+      "command": "uv run --locked --project apps/backend --all-extras python scripts/verify-production-stack.py --resume",
+      "result": {
+        "restart_persistence": "passed",
+        "persisted_messages": 3
+      },
+      "note": "All roles plus PostgreSQL/Redis restart and final source-image recreation preserved canonical IDs."
+    },
+    {
+      "command": "docker compose --env-file .local/portfolio.production.env -f deploy/compose.production.yaml exec -T gateway caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile",
+      "result": "passed"
+    },
+    {
+      "commands": [
+        "PORTFOLIO_ENV_FILE=.local/portfolio.production.env ALLOW_UNENCRYPTED_LOCAL_BACKUP=1 bash scripts/production-backup.sh",
+        "PORTFOLIO_ENV_FILE=.local/portfolio.production.env bash scripts/production-restore-drill.sh \"$PRIVATE_BACKUP_DIRECTORY\""
+      ],
+      "result": "passed",
+      "verified_artifacts": 87,
+      "original_data_overwritten": false,
+      "boundary": "Explicit private unencrypted local backup only; no encrypted off-host recovery claim"
+    },
+    {
+      "command": "uv run --locked --all-extras python -m supportdesk.cli.evaluate_live --allow-live",
+      "cwd": "apps/backend",
+      "result": "guard refused missing live configuration before external inference",
+      "live_request_succeeded": false
+    },
+    {
+      "command": "bash scripts/start-local.sh",
+      "result": "passed; ordinary fake generation restored",
+      "ready": {
+        "status": "ok",
+        "schema": "0008",
+        "redis": "ok",
+        "provider": "fake"
+      },
+      "frontend_http": 200
+    }
+  ],
+  "container_readiness_at_verification": {
+    "status": "ok",
+    "schema": "0008",
+    "redis": "ok",
+    "provider": "fake"
+  },
+  "provider": {
+    "adapter": "compatible_http",
+    "prompt_version": "answer-v2",
+    "single_leading_system": true,
+    "application_input_units": 6000,
+    "output_tokens": 800,
+    "attempts_reserved": 3,
+    "initial_tokens_reserved": 20400,
+    "provider_daily_tokens": 200000,
+    "workspace_daily_tokens": 100000,
+    "max_valid_job_leases": 1,
+    "max_unfinished_ai_runs": 10,
+    "unknown_usage": "Remains conservatively charged globally after workspace expiry",
+    "calls_in_transactions": false,
+    "live_configuration_present": false,
+    "live_requests_attempted": false,
+    "public_live_activation": false,
+    "public_shared_key_terms": "Unresolved; confirmation or another permitted provider required"
+  },
+  "resource_checks": {
+    "multi_workspace_atomic_budget": "passed on PostgreSQL",
+    "global_concurrency_queue": "passed on PostgreSQL",
+    "upload_storage_demo_limits": "passed on PostgreSQL",
+    "proxy_untrusted_spoof": "Five successful session creations then 429 despite varying spoofed headers",
+    "proxy_two_trusted_synthetic_clients": "Independent buckets passed",
+    "runtime_role": "Restricted non-owner; DDL denied and owner credentials absent",
+    "scheduled_retention": "Supervised hourly process; bounded subprocess and exclusion lock"
+  },
+  "embedding": {
+    "model": "intfloat/multilingual-e5-small",
+    "revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+    "dimensions": 384,
+    "requests_download_weights": false
+  },
+  "screenshots": [
+    {
+      "path": "docs/evidence/portfolio/customer-1024.png",
+      "sha256": "c6860932013b4db50bd829763a0bf85664ad37e94f355159ee3cac277c5d1aa8",
+      "width": 1024,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/portfolio/customer-1440.png",
+      "sha256": "4ab6d4c539010ba695e7816fbd340162ca15a4f1419b45bcbc0a169f2421932e",
+      "width": 1440,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/portfolio/customer-390.png",
+      "sha256": "c937e1252f227cce208c545b110944c209f976db2596b587ed25abb902874a93",
+      "width": 390,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/portfolio/customer-768.png",
+      "sha256": "eccde02ad005ded9277239178a77058599e618ecdfa2d3b5a369663c35d1421c",
+      "width": 768,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/portfolio/customer-chat.png",
+      "sha256": "14cf4a00abbe520a30ae8f8dca938a0ba0a2f112f88fbeecf62cf72ad6f5fe09",
+      "width": 1365,
+      "height": 1000
+    },
+    {
+      "path": "docs/evidence/portfolio/entry-1440.png",
+      "sha256": "432cedc3a07446070866714f8db881df33a9d9bc7460c214861602f8231ab290",
+      "width": 1440,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/portfolio/entry-390.png",
+      "sha256": "68bf7b78d9ce9edac97b66cffb595521d6e69fe26baded3aacfe4e81e00ce8b2",
+      "width": 390,
+      "height": 1118
+    },
+    {
+      "path": "docs/evidence/portfolio/knowledge-1024.png",
+      "sha256": "c69d35ec1b4b8fd140488077569e3dc979f02229de864cc1acf4b7e2dc8b3833",
+      "width": 1024,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/portfolio/knowledge-1440.png",
+      "sha256": "1915153f320b9bda58137131a07f92b9db15112211d8e5c393fefba9f94e4648",
+      "width": 1440,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/portfolio/knowledge-390.png",
+      "sha256": "4e336f696295006aefed0d4c6892671b96580a20631bb8a10dec04f9a01b78a6",
+      "width": 390,
+      "height": 1742
+    },
+    {
+      "path": "docs/evidence/portfolio/knowledge-768.png",
+      "sha256": "b7adaf9f16e0bd1c5e25d43277191ad7ac3e632e5e505788b2f0248b9f251add",
+      "width": 768,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/portfolio/knowledge.png",
+      "sha256": "3072508e1067fd139c0e104f241cb5fbeecc67f3c34640b63ecb06c0a3d628fb",
+      "width": 1365,
+      "height": 1000
+    },
+    {
+      "path": "docs/evidence/portfolio/login-1440.png",
+      "sha256": "ed5e9dc23dea27d0a630d0b7a724f5872b2e172f638a9948d7aa7af949ce04f1",
+      "width": 1440,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/portfolio/login-390.png",
+      "sha256": "20b8034a68e73dba4eb52efb05d920caa61b39a0af846cdc045c27c57a349d24",
+      "width": 390,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/portfolio/operator-1024.png",
+      "sha256": "4ed6d0718d76ca8ec15241a09bb93f2194c8cfd52f938d349fa2aada8affdfc0",
+      "width": 1024,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/portfolio/operator-1440.png",
+      "sha256": "4d0b5ed07e3d9dbcc16209f2a9797758c51ddd9cf548d5cd82d1069fa8eaf18c",
+      "width": 1440,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/portfolio/operator-390.png",
+      "sha256": "6ba781db0915fb2c67449c4e6508ca67ad0cc160d9754ab808285ae616f1a49d",
+      "width": 390,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/portfolio/operator-768.png",
+      "sha256": "2c4b1f1fb1955037bab86241efeacbfe1c9a15ddb36d733c5ecb115fd6dbdadd",
+      "width": 768,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/portfolio/operator-inbox.png",
+      "sha256": "9989f57f9d785a74b3291d2c6ccf218a75568769232caf2628d9f5d61e241f40",
+      "width": 1365,
+      "height": 1000
+    },
+    {
+      "path": "docs/evidence/portfolio/source-1024.png",
+      "sha256": "4528e8b9e3cd2add46c97ec62d20b3961f15ba91f58efa334438008d8f3e692f",
+      "width": 1024,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/portfolio/source-390.png",
+      "sha256": "4038b1f8f72b34c9a49894e1b4179b092c0831b10170c545f3b8c807aedf0bac",
+      "width": 390,
+      "height": 960
+    },
+    {
+      "path": "docs/evidence/portfolio/source-768.png",
+      "sha256": "89f1804dd97af6922b9c2ffabca45b6fd4efdf908c3f2bb1fd06492133174923",
+      "width": 768,
+      "height": 960
+    }
+  ],
+  "visual_inspection": {
+    "viewports": [
+      1440,
+      1024,
+      768,
+      390
+    ],
+    "entry_login": [
+      1440,
+      390
+    ],
+    "reduced_height_composer": "390x520 browser emulation passed",
+    "rendered_screens_inspected": true,
+    "physical_keyboard_verified": false
+  },
+  "verification_boundaries": {
+    "implemented": true,
+    "verified_locally": true,
+    "verified_with_live_provider": false,
+    "authenticated_model_listing": false,
+    "verified_on_freestyle": false,
+    "public_tls_verified": false,
+    "public_url": null,
+    "remote_push": false,
+    "paid_resources_created": false,
+    "human_claim_support_ratings": "uncollected",
+    "untouched_blind_cases": "uncollected",
+    "encrypted_off_host_restore": "unverified",
+    "new_load_or_host_performance_target": "not measured; historical reports preserved",
+    "unrelated_skills": "Preserved and excluded from source archives",
+    "secrets_and_test_sessions": "Ignored private .local files; excluded from source/evidence/archives"
+  },
+  "remaining_inputs": [
+    "Authorized Freestyle VM/account and domain",
+    "Actual ingress CIDRs and firewall policy",
+    "Private production secrets",
+    "Live provider base/key/model/context and permitted audience decision",
+    "Encrypted backup recipient/destination",
+    "Host TLS/WebSocket/cookie/two-client verification",
+    "Physical mobile keyboard and independent human/blind evaluation"
+  ],
+  "local_handoff": {
+    "development_origin": "http://localhost:5173",
+    "ready": {
+      "status": "ok",
+      "schema": "0008",
+      "redis": "ok",
+      "provider": "fake"
+    },
+    "isolated_verification_stack": "Stopped after successful verification; all four named volumes preserved",
+    "preserved_test_volumes": [
+      "supportdesk-portfolio-check_database",
+      "supportdesk-portfolio-check_files",
+      "supportdesk-portfolio-check_models",
+      "supportdesk-portfolio-check_redis"
+    ],
+    "stop_command": "docker compose --env-file .local/portfolio.production.env -f deploy/compose.production.yaml down --remove-orphans"
+  }
+}
