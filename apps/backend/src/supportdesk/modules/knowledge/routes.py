@@ -14,9 +14,15 @@ from supportdesk.infrastructure.database import get_db, now
 from supportdesk.modules.assistant.schemas import AssistantSetting
 from supportdesk.modules.audit.models import AuditRecord
 from supportdesk.modules.conversations.service import receipt, save_receipt
-from supportdesk.modules.identity.service import rate_limit, resolve, workspace_actor
+from supportdesk.modules.identity.service import (
+    rate_limit,
+    remote_identity,
+    resolve,
+    workspace_actor,
+)
 from supportdesk.modules.jobs.models import Job, Outbox
 from supportdesk.modules.jobs.service import enqueue
+from supportdesk.modules.knowledge.limits import capacity
 from supportdesk.modules.knowledge.models import Artifact, Document, DocumentVersion
 from supportdesk.modules.knowledge.schemas import (
     DocumentView,
@@ -130,6 +136,8 @@ async def upload(
     if not title.strip() or len(title) > 200:
         raise Problem(422, "INVALID_TITLE")
     await db.commit()
+    await rate_limit("upload-global", "all", get_settings().upload_daily_limit, 86400)
+    await rate_limit("upload-ip", remote_identity(request), 10, 3600)
     storage_key, digest, mime, size = await save_upload(file)
     try:
         await resolve(db, request, "staff")
@@ -141,6 +149,7 @@ async def upload(
             (get_settings().storage_root / storage_key).unlink(missing_ok=True)
             return UploadResult.model_validate(prior)
         await rate_limit("upload", str(actor.workspace_id), 10, 3600, db=db)
+        await capacity(db, size, ingestion=True)
         if document_id:
             doc = await db.scalar(
                 select(Document)
@@ -201,7 +210,7 @@ async def upload(
         await db.flush()
         return result
     except Exception:
-        # Complete orphan files are removed by the maintenance command.
+        (get_settings().storage_root / storage_key).unlink(missing_ok=True)
         raise
 
 
@@ -289,6 +298,10 @@ async def retry(job_id: UUID, db: DB, actor: Admin) -> JobView:
         raise Problem(404, "RESOURCE_NOT_FOUND")
     if info.kind != "ingestion":
         raise Problem(409, "INVALID_TRANSITION")
+    await rate_limit(
+        "ingestion-retry-global", "all", get_settings().upload_daily_limit, 86400, db=db
+    )
+    await capacity(db, 0, ingestion=True)
     version = await db.get(DocumentVersion, info.resource_id)
     if version:
         doc = await db.scalar(
@@ -335,6 +348,8 @@ async def configure_assistant(
     from supportdesk.modules.assistant.service import ready
     from supportdesk.modules.workspaces.models import Workspace
 
+    if body.enabled and not get_settings().ai_enabled_for_public():
+        raise Problem(409, "ASSISTANT_DISABLED")
     if body.enabled and not await ready(db, actor.workspace_id):
         raise Problem(409, "ASSISTANT_UNAVAILABLE")
     workspace = await db.get(Workspace, actor.workspace_id)

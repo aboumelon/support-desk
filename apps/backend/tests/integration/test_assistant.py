@@ -19,7 +19,7 @@ from .test_knowledge import upload
 async def prepare(client: AsyncClient):
     url, _, original = await upload(
         client,
-        text="# Naran trial\nThe fictional Naran trial lasts fourteen days. "
+        text="# Tarvio trial\nThe fictional Tarvio trial lasts fourteen days. "
         "No credit card is needed.",
     )
     await asyncio.to_thread(execute_job, original["job_id"])
@@ -40,7 +40,7 @@ async def prepare(client: AsyncClient):
         prefix + "/messages",
         json={
             "client_message_id": str(uuid4()),
-            "body": "How long is the Naran trial?",
+            "body": "How long is the Tarvio trial?",
         },
     )
     assert response.status_code == 201, response.text

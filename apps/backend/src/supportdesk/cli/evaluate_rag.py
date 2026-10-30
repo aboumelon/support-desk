@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from supportdesk.config import get_settings, project_root
 from supportdesk.infrastructure.worker_database import worker_engine
 from supportdesk.modules.assistant.embeddings.e5 import encode
+from supportdesk.modules.assistant.prompts import build_messages
 from supportdesk.modules.assistant.providers.fake import FakeProvider
 from supportdesk.modules.knowledge.retrieval import retrieve
 from supportdesk.modules.workspaces.models import Workspace
@@ -24,56 +25,53 @@ def main() -> None:
     results = []
     with Session(worker_engine()) as db:
         workspaces = {w.public_key: w.id for w in db.scalars(select(Workspace)).all()}
-        for case, vector in zip(cases, vectors, strict=True):
-            start = time.perf_counter()
+    for case, vector in zip(cases, vectors, strict=True):
+        start = time.perf_counter()
+        with Session(worker_engine()) as db:
             passages = retrieve(db, workspaces[case["workspace"]], vector, limit=5)
-            handoff = not passages or passages[0].score < 0.65
-            row = {
-                **case,
-                "retrieved": [p.title for p in passages],
-                "scores": [p.score for p in passages],
-                "predicted_handoff": handoff,
-                "handoff_correct": handoff == case["handoff"],
-                "retrieval_ms": (time.perf_counter() - start) * 1000,
-                "isolation_pass": all(
-                    p.chunk.workspace_id == workspaces[case["workspace"]]
-                    for p in passages
+        handoff = not passages or passages[0].score < 0.65
+        row = {
+            **case,
+            "retrieved": [p.title for p in passages],
+            "scores": [p.score for p in passages],
+            "predicted_handoff": handoff,
+            "handoff_correct": handoff == case["handoff"],
+            "retrieval_ms": (time.perf_counter() - start) * 1000,
+            "isolation_pass": all(
+                p.chunk.workspace_id == workspaces[case["workspace"]] for p in passages
+            ),
+        }
+        if case.get("expected_source"):
+            row["recall_at_5"] = any(
+                p.title == f"Fictional fixture: {case['expected_source']}"
+                for p in passages
+            )
+        if not handoff:
+            start = time.perf_counter()
+            first = None
+            answer = ""
+            for delta in FakeProvider().stream(
+                build_messages(
+                    [{"label": "S1", "text": passages[0].chunk.text}],
+                    [("user", case["question"])],
+                    get_settings().input_allowance(),
                 ),
-            }
-            if case.get("expected_source"):
-                row["recall_at_5"] = any(
-                    p.title == f"Fictional fixture: {case['expected_source']}"
-                    for p in passages
-                )
-            if not handoff:
-                start = time.perf_counter()
-                first = None
-                answer = ""
-                for delta in FakeProvider().stream(
-                    [
-                        {"role": "system", "content": "Fixture evaluation"},
-                        {
-                            "role": "system",
-                            "content": f"[S1]\n{passages[0].chunk.text}",
-                        },
-                        {"role": "user", "content": case["question"]},
-                    ],
-                    8192,
-                ):
-                    if delta.text and first is None:
-                        first = (time.perf_counter() - start) * 1000
-                    answer += delta.text
-                if "NO_ANSWER" in answer:
-                    row["predicted_handoff"] = True
-                    row["handoff_correct"] = case["handoff"]
-                row.update(
-                    first_token_ms=first,
-                    full_answer_ms=(time.perf_counter() - start) * 1000,
-                    source_id_valid="NO_ANSWER" in answer
-                    or ("[S1]" in answer and "[S99]" not in answer),
-                    answer=answer,
-                )
-            results.append(row)
+                8192,
+            ):
+                if delta.text and first is None:
+                    first = (time.perf_counter() - start) * 1000
+                answer += delta.text
+            if "NO_ANSWER" in answer:
+                row["predicted_handoff"] = True
+                row["handoff_correct"] = case["handoff"]
+            row.update(
+                first_token_ms=first,
+                full_answer_ms=(time.perf_counter() - start) * 1000,
+                source_id_valid="NO_ANSWER" in answer
+                or ("[S1]" in answer and "[S99]" not in answer),
+                answer=answer,
+            )
+        results.append(row)
     answerable = [r for r in results if r["category"] == "answerable"]
     latencies = [r["full_answer_ms"] for r in results if "full_answer_ms" in r]
     report = {
@@ -91,7 +89,7 @@ def main() -> None:
         "live_provider": "unverified; no credentials or paid API calls used",
         "results": results,
     }
-    path = root / "docs/evidence/rag-fixture.json"
+    path = root / "docs/evidence/rag-portfolio.json"
     path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n")
     print(json.dumps({k: v for k, v in report.items() if k != "results"}, indent=2))
 

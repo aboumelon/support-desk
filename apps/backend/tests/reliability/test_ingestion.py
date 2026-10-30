@@ -24,9 +24,10 @@ from ..integration.test_knowledge import upload
 async def test_actual_celery_embedding_and_ready_only_retrieval(client: AsyncClient):
     url, _, original = await upload(
         client,
-        text="# Fictional trial policy\nThe fictional Naran trial lasts fourteen days. "
+        text="# Fictional trial policy\n"
+        "The fictional Tarvio trial lasts fourteen days. "
         "No payment card is needed.\n"
-        "دوره آزمایشی نارَن چهارده روز است و نیازی به کارت پرداخت ندارد.",
+        "دوره آزمایشی تارویو چهارده روز است و نیازی به کارت پرداخت ندارد.",
     )
     async with Session() as db:
         job = await db.get(Job, UUID(original["job_id"]))
@@ -68,7 +69,7 @@ async def test_actual_celery_embedding_and_ready_only_retrieval(client: AsyncCli
                         break
                 await asyncio.sleep(0.25)
         vector = (
-            await asyncio.to_thread(encode, ["How long is the Naran trial?"], "query")
+            await asyncio.to_thread(encode, ["How long is the Tarvio trial?"], "query")
         )[0]
 
         def check():

@@ -11,7 +11,7 @@ from supportdesk.infrastructure.database import get_db
 from supportdesk.modules.assistant.models import AiRun, MessageCitation
 from supportdesk.modules.assistant.schemas import CitationView, RunView
 from supportdesk.modules.conversations.control import control
-from supportdesk.modules.conversations.models import Conversation
+from supportdesk.modules.conversations.inbox import inbox
 from supportdesk.modules.conversations.schemas import (
     ControlInput,
     ConversationView,
@@ -61,56 +61,22 @@ def audience_router(audience: str) -> APIRouter:
 
     @routes.get("/conversations", response_model=list[ConversationView])
     async def listing(
+        response: Response,
         db: DB,
         actor: Auth,
         status: str | None = None,
         controller: str | None = None,
         assigned_actor_id: UUID | None = None,
         before: int | None = None,
+        cursor: Annotated[str | None, Query(max_length=512)] = None,
+        q: Annotated[str | None, Query(min_length=2, max_length=120)] = None,
         limit: Annotated[int, Query(ge=1, le=100)] = 50,
     ) -> list[ConversationView]:
-        query = select(Conversation).where(
-            Conversation.workspace_id == actor.workspace_id
+        result, next_cursor = await inbox(
+            db, actor, status, controller, assigned_actor_id, before, cursor, q, limit
         )
-        if actor.kind == "visitor":
-            query = query.where(Conversation.visitor_actor_id == actor.id)
-        if status:
-            query = query.where(Conversation.status == status)
-        if controller:
-            query = query.where(Conversation.controller == controller)
-        if assigned_actor_id:
-            query = query.where(Conversation.assigned_actor_id == assigned_actor_id)
-        # Inbox pagination follows last activity timestamps.
-        if before:
-            from datetime import UTC, datetime
-
-            query = query.where(
-                Conversation.updated_at < datetime.fromtimestamp(before / 1000000, UTC)
-            )
-        items = (
-            await db.scalars(
-                query.order_by(Conversation.updated_at.desc()).limit(limit)
-            )
-        ).all()
-        result = []
-        for conversation in items:
-            cursor = await db.get(ReadCursor, (conversation.id, actor.id))
-            unread = (
-                await db.scalar(
-                    select(func.count())
-                    .select_from(Message)
-                    .where(
-                        Message.workspace_id == actor.workspace_id,
-                        Message.conversation_id == conversation.id,
-                        Message.sender_actor_id != actor.id,
-                        Message.event_seq > (cursor.last_read_seq if cursor else 0),
-                    )
-                )
-                or 0
-            )
-            view = ConversationView.model_validate(conversation)
-            view.unread_count = unread
-            result.append(view)
+        if next_cursor:
+            response.headers["X-Next-Cursor"] = next_cursor
         await db.commit()
         return result
 

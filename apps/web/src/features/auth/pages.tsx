@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
@@ -7,12 +8,22 @@ import * as Label from "@radix-ui/react-label";
 import { api } from "@supportdesk/api-client";
 import { Brand, Button, Icon } from "../../components/ui";
 import { resetScope } from "../../lib/query-client";
+import { DemoIndicator } from "../../components/demo-indicator";
 export function Landing() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
+  const capabilities = useQuery({
+    queryKey: ["public-capabilities"],
+    queryFn: async () => {
+      const result = await api.GET("/api/v1/public/capabilities");
+      if (!result.data) throw Error();
+      return result.data;
+    },
+  });
   async function start() {
+    if (!capabilities.data?.demo_available || busy) return;
     setBusy(true);
     setError(false);
     try {
@@ -32,7 +43,9 @@ export function Landing() {
         <Link to="/" aria-label={t("brand")}>
           <Brand />
         </Link>
-        <span className="provider-note">{t("fixture")}</span>
+        {capabilities.data?.demo_available && (
+          <DemoIndicator mode={capabilities.data.ai_mode} fictional />
+        )}
       </header>
       <section className="entry-grid">
         <div className="entry-copy">
@@ -44,22 +57,44 @@ export function Landing() {
           </h1>
           <p>{t("intro")}</p>
           <div className="entry-actions">
-            <Button onClick={start} disabled={busy}>
-              {t(busy ? "loading" : "demo")}
-              <Icon name="arrow" />
-            </Button>
+            {capabilities.data?.demo_available && (
+              <Button onClick={start} disabled={busy}>
+                {t(busy ? "loading" : "demo")}
+                <Icon name="arrow" />
+              </Button>
+            )}
             <Link className="button button--secondary" to="/login">
               {t("login")}
             </Link>
           </div>
+          {capabilities.isLoading && <p role="status">{t("loading")}</p>}
+          {capabilities.error && (
+            <p role="alert">
+              {t("apiUnavailable")}{" "}
+              <button
+                className="text-button"
+                onClick={() => capabilities.refetch()}
+              >
+                {t("retry")}
+              </button>
+            </p>
+          )}
+          {capabilities.data && !capabilities.data.demo_available && (
+            <p>{t("demoUnavailable")}</p>
+          )}
           {error && (
             <p className="form-error" role="alert">
               {t("error")}
             </p>
           )}
-          <small>{t("isolation")}</small>
+          {capabilities.data?.demo_available && <small>{t("isolation")}</small>}
         </div>
-        <div className="product-visual" aria-hidden="true">
+        <div
+          className="product-visual"
+          role="img"
+          aria-label={t("illustrationLabel")}
+        >
+          <span className="illustration-caption">{t("illustrationLabel")}</span>
           <div className="visual-thread">
             <i />
             <i />

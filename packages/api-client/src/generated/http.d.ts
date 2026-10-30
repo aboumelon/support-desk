@@ -261,6 +261,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/capabilities": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Capabilities */
+        get: operations["capabilities_api_v1_public_capabilities_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/public/demo": {
         parameters: {
             query?: never;
@@ -616,6 +633,10 @@ export interface components {
             id: string;
             /** Last Event Seq */
             last_event_seq: number;
+            /** Last Message Kind */
+            last_message_kind?: string | null;
+            /** Last Message Preview */
+            last_message_preview?: string | null;
             /** State Version */
             state_version: number;
             /**
@@ -623,6 +644,8 @@ export interface components {
              * @enum {string}
              */
             status: "open" | "resolved";
+            /** Title */
+            title?: string | null;
             /**
              * Unread Count
              * @default 0
@@ -730,6 +753,11 @@ export interface components {
              * Format: uuid
              */
             actor_id: string;
+            /**
+             * Fictional Data
+             * @default false
+             */
+            fictional_data: boolean;
             /** Name */
             name: string;
             /** Role */
@@ -781,6 +809,16 @@ export interface components {
             /** Sender Kind */
             sender_kind: string;
         };
+        /** PublicCapabilities */
+        PublicCapabilities: {
+            /**
+             * Ai Mode
+             * @enum {string}
+             */
+            ai_mode: "simulated" | "live" | "disabled";
+            /** Demo Available */
+            demo_available: boolean;
+        };
         /** ReadInput */
         ReadInput: {
             /** Last Read Seq */
@@ -812,6 +850,11 @@ export interface components {
             /** Actor Id */
             actor_id?: string | null;
             /**
+             * Ai Available
+             * @default true
+             */
+            ai_available: boolean;
+            /**
              * Audience
              * @enum {string}
              */
@@ -823,6 +866,11 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
+            /**
+             * Fictional Data
+             * @default false
+             */
+            fictional_data: boolean;
             /**
              * Memberships
              * @default []
@@ -998,6 +1046,8 @@ export interface operations {
                 controller?: string | null;
                 assigned_actor_id?: string | null;
                 before?: number | null;
+                cursor?: string | null;
+                q?: string | null;
                 limit?: number;
                 workspace_id?: string | null;
             };
@@ -1427,6 +1477,26 @@ export interface operations {
             };
         };
     };
+    capabilities_api_v1_public_capabilities_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicCapabilities"];
+                };
+            };
+        };
+    };
     demo_api_v1_public_demo_post: {
         parameters: {
             query?: never;
@@ -1551,6 +1621,8 @@ export interface operations {
                 controller?: string | null;
                 assigned_actor_id?: string | null;
                 before?: number | null;
+                cursor?: string | null;
+                q?: string | null;
                 limit?: number;
             };
             header?: never;

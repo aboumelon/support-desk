@@ -66,7 +66,7 @@ async def test_origin_rate_limit_and_login(client: AsyncClient):
             "/api/v1/public/demo", headers={"Origin": "https://evil.invalid"}
         )
     ).status_code == 403
-    payload = {"email": "admin@naran.invalid", "password": "wrong"}
+    payload = {"email": "admin@tarvio.invalid", "password": "wrong"}
     assert (
         await client.post("/api/v1/auth/staff/login", json=payload)
     ).status_code == 401

@@ -22,11 +22,16 @@ export function errorKey(value: unknown) {
   return (
     (
       {
+        RATE_LIMITED: "resourceLimit",
+        STORAGE_CAPACITY_REACHED: "resourceLimit",
+        INGESTION_CAPACITY_REACHED: "resourceLimit",
+        DEMO_CAPACITY_REACHED: "resourceLimit",
         FORBIDDEN: "permissionError",
         FILE_TOO_LARGE: "fileTooLarge",
         UNSUPPORTED_DOCUMENT: "unsupportedDocument",
         INVALID_TITLE: "invalidTitle",
         ASSISTANT_UNAVAILABLE: "nothingReady",
+        ASSISTANT_DISABLED: "assistantDisabled",
         ASSISTANT_REQUIRES_KNOWLEDGE: "nothingReady",
         SESSION_EXPIRED: "sessionExpired",
       } as Record<string, string>

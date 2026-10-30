@@ -147,6 +147,28 @@
             "title": "Last Event Seq",
             "type": "integer"
           },
+          "last_message_kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Message Kind"
+          },
+          "last_message_preview": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Message Preview"
+          },
           "state_version": {
             "title": "State Version",
             "type": "integer"
@@ -158,6 +180,17 @@
             ],
             "title": "Status",
             "type": "string"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
           },
           "unread_count": {
             "default": 0,
@@ -404,6 +437,11 @@
             "title": "Actor Id",
             "type": "string"
           },
+          "fictional_data": {
+            "default": false,
+            "title": "Fictional Data",
+            "type": "boolean"
+          },
           "name": {
             "title": "Name",
             "type": "string"
@@ -508,6 +546,29 @@
         "title": "MessageView",
         "type": "object"
       },
+      "PublicCapabilities": {
+        "properties": {
+          "ai_mode": {
+            "enum": [
+              "simulated",
+              "live",
+              "disabled"
+            ],
+            "title": "Ai Mode",
+            "type": "string"
+          },
+          "demo_available": {
+            "title": "Demo Available",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "demo_available",
+          "ai_mode"
+        ],
+        "title": "PublicCapabilities",
+        "type": "object"
+      },
       "ReadInput": {
         "properties": {
           "last_read_seq": {
@@ -593,6 +654,11 @@
             ],
             "title": "Actor Id"
           },
+          "ai_available": {
+            "default": true,
+            "title": "Ai Available",
+            "type": "boolean"
+          },
           "audience": {
             "enum": [
               "staff",
@@ -609,6 +675,11 @@
             "format": "date-time",
             "title": "Expires At",
             "type": "string"
+          },
+          "fictional_data": {
+            "default": false,
+            "title": "Fictional Data",
+            "type": "boolean"
           },
           "memberships": {
             "default": [],
@@ -988,6 +1059,41 @@
                 }
               ],
               "title": "Before"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
             }
           },
           {
@@ -1767,6 +1873,24 @@
         "summary": "Ready"
       }
     },
+    "/api/v1/public/capabilities": {
+      "get": {
+        "operationId": "capabilities_api_v1_public_capabilities_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCapabilities"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Capabilities"
+      }
+    },
     "/api/v1/public/demo": {
       "post": {
         "operationId": "demo_api_v1_public_demo_post",
@@ -1998,6 +2122,41 @@
                 }
               ],
               "title": "Before"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
+            }
+          },
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 120,
+                  "minLength": 2,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Q"
             }
           },
           {

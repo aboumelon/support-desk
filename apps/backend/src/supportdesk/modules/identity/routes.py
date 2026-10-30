@@ -4,7 +4,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request, Response
-from sqlalchemy import select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
@@ -12,7 +12,12 @@ from supportdesk.api.errors import Problem
 from supportdesk.config import get_settings
 from supportdesk.infrastructure.database import get_db, now
 from supportdesk.modules.identity.models import StaffUser
-from supportdesk.modules.identity.schemas import LoginInput, SessionView, WorkspaceView
+from supportdesk.modules.identity.schemas import (
+    LoginInput,
+    PublicCapabilities,
+    SessionView,
+    WorkspaceView,
+)
 from supportdesk.modules.identity.service import (
     DUMMY_HASH,
     Principal,
@@ -29,6 +34,23 @@ from supportdesk.modules.identity.service import (
 from supportdesk.modules.workspaces.models import Actor, Workspace
 
 router = APIRouter(prefix="/api/v1")
+
+
+@router.get("/public/capabilities", response_model=PublicCapabilities)
+async def capabilities() -> PublicCapabilities:
+    settings = get_settings()
+    return PublicCapabilities(
+        demo_available=settings.demo_mode,
+        ai_mode=(
+            "disabled"
+            if not settings.ai_enabled_for_public()
+            else "simulated"
+            if settings.llm_provider == "fake"
+            else "live"
+        ),
+    )
+
+
 DB = Annotated[AsyncSession, Depends(get_db)]
 
 
@@ -96,6 +118,12 @@ async def visitor(
     )
     if not workspace or (workspace.expires_at and workspace.expires_at <= now()):
         raise Problem(404, "RESOURCE_NOT_FOUND")
+    if (
+        get_settings().app_env == "production"
+        and workspace.fictional_data
+        and workspace.expires_at is None
+    ):
+        raise Problem(404, "RESOURCE_NOT_FOUND")
     actor = Actor(
         workspace_id=workspace.id, kind="visitor", display_name="Demo customer"
     )
@@ -133,9 +161,17 @@ async def demo(request: Request, response: Response, db: DB) -> SessionView:
         raise Problem(404, "RESOURCE_NOT_FOUND")
     await rate_limit("session", remote_identity(request), 5)
     # Each browser demo gets its own staff identity and workspace; no shared privileges.
+    await rate_limit("demo-global", "all", get_settings().demo_daily_limit, 86400)
+    await db.execute(text("SELECT pg_advisory_xact_lock(76124912, 2)"))
+    active = await db.scalar(
+        select(func.count()).select_from(Workspace).where(Workspace.expires_at > now())
+    )
+    if (active or 0) >= get_settings().demo_active_limit:
+        raise Problem(429, "DEMO_CAPACITY_REACHED")
     workspace = Workspace(
         public_key=secrets.token_urlsafe(18),
-        name="Fictional Naran Cloud",
+        name="Tarvio Cloud (fictional)",
+        fictional_data=True,
         expires_at=now() + timedelta(hours=24),
     )
     user = StaffUser(

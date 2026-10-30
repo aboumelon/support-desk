@@ -20,6 +20,9 @@ class ConversationView(BaseModel):
     last_event_seq: int
     updated_at: datetime
     unread_count: int = 0
+    title: str | None = None
+    last_message_preview: str | None = None
+    last_message_kind: str | None = None
 
 
 class MessageInput(BaseModel):

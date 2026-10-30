@@ -6,13 +6,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from supportdesk.infrastructure.database import now
+from supportdesk.modules.assistant.budgets import lock_provider, settle
 from supportdesk.modules.assistant.models import (
-    AiAttempt,
     AiRun,
     MessageCitation,
     RunSource,
     UsagePeriod,
-    UsageReservation,
 )
 from supportdesk.modules.conversations.models import Conversation
 from supportdesk.modules.jobs.models import Job, Outbox
@@ -46,33 +45,6 @@ def emit(
             dedupe_key=f"event:{event_id}",
         )
     )
-
-
-def settle(db: Session, run: AiRun) -> None:
-    period = db.scalar(
-        select(UsagePeriod)
-        .where(
-            UsagePeriod.workspace_id == run.workspace_id,
-            UsagePeriod.period == run.period,
-        )
-        .with_for_update()
-    )
-    reservation = db.scalar(
-        select(UsageReservation)
-        .where(UsageReservation.ai_run_id == run.id)
-        .with_for_update()
-    )
-    if period is None or reservation is None:
-        return
-    attempts = db.scalars(select(AiAttempt).where(AiAttempt.run_id == run.id)).all()
-    charged = sum(
-        (a.input_tokens or 0) + (a.output_tokens or 0)
-        if a.usage_state == "known"
-        else run.per_attempt_tokens
-        for a in attempts
-    )
-    period.charged_tokens -= reservation.charged_tokens - charged
-    reservation.charged_tokens, reservation.state = charged, "settled"
 
 
 def finish(
@@ -112,6 +84,7 @@ def finish(
         )
         .with_for_update()
     )
+    lock_provider(db, run)
     db.execute(
         select(UsagePeriod)
         .where(
@@ -258,6 +231,7 @@ def recover_terminal_run(db: Session, run_id: UUID) -> None:
         .where(Conversation.id == info.conversation_id)
         .with_for_update()
     )
+    lock_provider(db, info)
     db.execute(
         select(UsagePeriod)
         .where(

@@ -1,43 +1,137 @@
-name: supportdesk-production
+name: ${COMPOSE_PROJECT_NAME:-supportdesk-production}
+x-runtime: &runtime
+  APP_ENV: production
+  COOKIE_SECURE: 'true'
+  ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:?Set exact HTTPS origins}
+  SESSION_SECRET: ${SESSION_SECRET:?Set a strong session secret}
+  DATABASE_URL: ${RUNTIME_DATABASE_URL:?Set restricted runtime URL}
+  REDIS_URL: redis://redis:6379/0
+  STORAGE_ROOT: /var/lib/supportdesk/files
+  MODEL_CACHE: /var/lib/supportdesk/models
+  DEMO_MODE: ${DEMO_MODE:-false}
+  LLM_PROVIDER: ${LLM_PROVIDER:-fake}
+  LLM_BASE_URL: ${LLM_BASE_URL:-}
+  LLM_API_KEY: ${LLM_API_KEY:-}
+  LLM_MODEL: ${LLM_MODEL:-}
+  LLM_CONTEXT_LIMIT: ${LLM_CONTEXT_LIMIT:-8192}
+  AI_MAX_INPUT_TOKENS: ${AI_MAX_INPUT_TOKENS:-6000}
+  AI_MAX_OUTPUT_TOKENS: ${AI_MAX_OUTPUT_TOKENS:-800}
+  AI_TOTAL_TIMEOUT_SECONDS: ${AI_TOTAL_TIMEOUT_SECONDS:-90}
+  AI_DAILY_TOKEN_LIMIT: ${AI_DAILY_TOKEN_LIMIT:-100000}
+  AI_PROVIDER_DAILY_TOKEN_LIMIT: ${AI_PROVIDER_DAILY_TOKEN_LIMIT:-200000}
+  AI_MAX_CONCURRENT: ${AI_MAX_CONCURRENT:-1}
+  AI_MAX_QUEUED: ${AI_MAX_QUEUED:-10}
+  LLM_CONNECT_TIMEOUT_SECONDS: ${LLM_CONNECT_TIMEOUT_SECONDS:-5}
+  LLM_READ_TIMEOUT_SECONDS: ${LLM_READ_TIMEOUT_SECONDS:-15}
+  LLM_RETRY_AFTER_MAX_SECONDS: ${LLM_RETRY_AFTER_MAX_SECONDS:-30}
+  PUBLIC_LIVE_AI_ENABLED: ${PUBLIC_LIVE_AI_ENABLED:-false}
+  DEMO_DAILY_LIMIT: ${DEMO_DAILY_LIMIT:-50}
+  DEMO_ACTIVE_LIMIT: ${DEMO_ACTIVE_LIMIT:-50}
+  UPLOAD_DAILY_LIMIT: ${UPLOAD_DAILY_LIMIT:-20}
+  INGESTION_MAX_QUEUED: ${INGESTION_MAX_QUEUED:-5}
+  STORAGE_MAX_BYTES: ${STORAGE_MAX_BYTES:-268435456}
+  TRUSTED_PROXIES: '["${GATEWAY_PRIVATE_IP:-172.30.29.2}/32"]'
+  EMBEDDING_REVISION: 614241f622f53c4eeff9890bdc4f31cfecc418b3
+x-logs: &logs
+  driver: local
+  options: {max-size: '10m', max-file: '5'}
 x-backend: &backend
+  image: supportdesk-api:${RELEASE_ID:-local}
   build:
     context: ..
     dockerfile: apps/backend/Dockerfile
     target: base
-  env_file: ../.env.production
-  environment:
-    DATABASE_URL: ${RUNTIME_DATABASE_URL:?Set the restricted runtime PostgreSQL URL}
-    REDIS_URL: redis://redis:6379/0
-    STORAGE_ROOT: /var/lib/supportdesk/files
-    MODEL_CACHE: /var/lib/supportdesk/models
+    labels: {org.opencontainers.image.revision: '${RELEASE_ID:-local}'}
+  environment: *runtime
   volumes: [files:/var/lib/supportdesk/files, models:/var/lib/supportdesk/models]
   restart: unless-stopped
+  init: true
+  logging: *logs
+  networks: [private]
+  depends_on:
+    postgres: {condition: service_healthy}
+    redis: {condition: service_healthy}
 services:
   gateway:
+    image: supportdesk-gateway:${RELEASE_ID:-local}
     build:
       context: ..
       dockerfile: apps/web/Dockerfile
-    ports: ['127.0.0.1:8080:8080']
+      labels: {org.opencontainers.image.revision: '${RELEASE_ID:-local}'}
+    ports: ['${GATEWAY_BIND_ADDRESS:-127.0.0.1}:${GATEWAY_PORT:-8080}:8080']
+    environment:
+      EDGE_TRUSTED_PROXIES: ${EDGE_TRUSTED_PROXIES:-127.0.0.1/32}
     restart: unless-stopped
+    logging: *logs
+    networks:
+      private: {ipv4_address: '${GATEWAY_PRIVATE_IP:-172.30.29.2}'}
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, wget, -q, --spider, http://127.0.0.1:8080/]
+      interval: 5s
+      timeout: 3s
+      retries: 20
   api:
     <<: *backend
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health/ready', timeout=3)"]
+      interval: 5s
+      timeout: 4s
+      retries: 30
   dispatcher:
     <<: *backend
     command: [python, -m, supportdesk.workers.dispatcher]
   worker:
     <<: *backend
+    image: supportdesk-worker:${RELEASE_ID:-local}
     build:
       context: ..
       dockerfile: apps/backend/Dockerfile
       target: worker
-    command: [celery, -A, 'supportdesk.workers.celery_app:app', worker, -Q, 'ai,ingestion', '--concurrency=1']
+      labels: {org.opencontainers.image.revision: '${RELEASE_ID:-local}'}
+    command: [celery, -A, 'supportdesk.workers.celery_app:app', worker, -Q, 'ai,ingestion', '--concurrency=1', '--loglevel=WARNING']
+    stop_grace_period: 125s
+  retention:
+    <<: *backend
+    command: [python, -m, supportdesk.cli.maintenance]
   migrate:
     <<: *backend
     profiles: [maintenance]
     restart: 'no'
     environment:
-      DATABASE_URL: ${MIGRATION_DATABASE_URL:?Set the migration owner PostgreSQL URL}
+      <<: *runtime
+      DATABASE_URL: ${MIGRATION_DATABASE_URL:?Set migration owner URL}
     command: [alembic, upgrade, head]
+  roles:
+    <<: *backend
+    profiles: [maintenance]
+    restart: 'no'
+    environment:
+      <<: *runtime
+      DATABASE_URL: ${MIGRATION_DATABASE_URL:?Set migration owner URL}
+      RUNTIME_DATABASE_URL: ${RUNTIME_DATABASE_URL:?Set restricted runtime URL}
+    command: [python, -m, supportdesk.cli.runtime_role]
+  model-init:
+    <<: *backend
+    image: supportdesk-worker:${RELEASE_ID:-local}
+    build:
+      context: ..
+      dockerfile: apps/backend/Dockerfile
+      target: worker
+    profiles: [maintenance]
+    restart: 'no'
+    command: [python, -m, supportdesk.cli.provision_embeddings]
+  seed:
+    <<: *backend
+    profiles: [maintenance]
+    restart: 'no'
+    command: [python, -m, supportdesk.cli.seed_portfolio]
+  wait-knowledge:
+    <<: *backend
+    profiles: [maintenance]
+    restart: 'no'
+    command: [python, -m, supportdesk.cli.wait_knowledge]
   purge:
     <<: *backend
     profiles: [maintenance]
@@ -48,14 +142,32 @@ services:
     environment:
       POSTGRES_USER: supportdesk_owner
       POSTGRES_DB: supportdesk
-      POSTGRES_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?Set the database owner password}
+      POSTGRES_PASSWORD: ${POSTGRES_OWNER_PASSWORD:?Set database owner password}
     volumes: [database:/var/lib/postgresql/data]
     restart: unless-stopped
+    logging: *logs
+    networks: [private]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U supportdesk_owner -d supportdesk']
+      interval: 2s
+      timeout: 3s
+      retries: 30
   redis:
     image: redis:8.0.2-alpine@sha256:48501c5ad00d5563bc30c075c7bcef41d7d98de3e9a1e6c752068c66f0a8463b
     command: [redis-server, --appendonly, 'yes', --maxmemory-policy, noeviction]
     volumes: [redis:/data]
     restart: unless-stopped
+    logging: *logs
+    networks: [private]
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+networks:
+  private:
+    ipam:
+      config: [{subnet: '${PRIVATE_SUBNET:-172.30.29.0/24}', ip_range: '${PRIVATE_DYNAMIC_RANGE:-172.30.29.128/25}', gateway: '${PRIVATE_BRIDGE_IP:-172.30.29.1}'}]
 volumes:
   database:
   redis:

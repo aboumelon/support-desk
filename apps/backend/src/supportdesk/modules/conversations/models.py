@@ -7,7 +7,9 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Index,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -18,6 +20,12 @@ from supportdesk.infrastructure.database import Base, Identified, Timestamped, n
 class Conversation(Identified, Timestamped, Base):
     __tablename__ = "conversations"
     __table_args__ = (
+        Index(
+            "ix_inbox_activity_cursor",
+            "workspace_id",
+            text("updated_at DESC"),
+            text("id DESC"),
+        ),
         UniqueConstraint("workspace_id", "id", name="uq_conversation_workspace"),
         ForeignKeyConstraint(
             ["workspace_id", "visitor_actor_id"],

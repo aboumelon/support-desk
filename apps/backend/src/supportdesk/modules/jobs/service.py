@@ -1,9 +1,10 @@
 from datetime import timedelta
 from uuid import UUID, uuid4
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select, text
 from sqlalchemy.orm import Session
 
+from supportdesk.config import get_settings
 from supportdesk.infrastructure.database import now
 from supportdesk.modules.jobs.models import Job, Outbox
 from supportdesk.modules.workspaces.models import Workspace
@@ -34,7 +35,33 @@ def enqueue(db: Session, workspace_id: UUID, kind: str, resource_id: UUID) -> Jo
 
 
 def claim(db: Session, job_id: UUID) -> tuple[UUID, int] | None:
-    job = db.scalar(select(Job).where(Job.id == job_id).with_for_update())
+    info = db.get(Job, job_id)
+    if info is not None and info.kind == "ai":
+        db.execute(text("SELECT pg_advisory_xact_lock(76124912, 1)"))
+        active = (
+            db.scalar(
+                select(func.count())
+                .select_from(Job)
+                .where(
+                    Job.kind == "ai",
+                    Job.status == "running",
+                    Job.leased_until > now(),
+                    Job.id != job_id,
+                )
+            )
+            or 0
+        )
+        if active >= get_settings().ai_max_concurrent:
+            if info.status in {"pending", "retry"}:
+                info.available_at = now() + timedelta(seconds=5)
+                info.last_dispatched_at = None
+            return None
+    job = db.scalar(
+        select(Job)
+        .where(Job.id == job_id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
     if job is None or job.status in {"succeeded", "failed", "cancelled"}:
         return None
     workspace = db.get(Workspace, job.workspace_id)

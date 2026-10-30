@@ -2,11 +2,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/../apps/backend"
 export UV_CACHE_DIR=/tmp/supportdesk-uv-cache
-uv run --all-extras uvicorn supportdesk.main:create_app --factory --host 127.0.0.1 --port 8000 --no-access-log &
+uv run --locked --all-extras uvicorn supportdesk.main:create_app --factory --host 127.0.0.1 --port 8000 --no-access-log --no-proxy-headers &
 api_pid=$!
-uv run --all-extras python -m supportdesk.workers.dispatcher &
+uv run --locked --all-extras python -m supportdesk.workers.dispatcher &
 dispatcher_pid=$!
-uv run --all-extras celery -A supportdesk.workers.celery_app:app worker -Q ai,ingestion --concurrency=1 --loglevel=WARNING &
+uv run --locked --all-extras celery -A supportdesk.workers.celery_app:app worker -Q ai,ingestion --concurrency=1 --loglevel=WARNING &
 worker_pid=$!
 (cd ../.. && pnpm --filter @supportdesk/web dev) &
 web_pid=$!

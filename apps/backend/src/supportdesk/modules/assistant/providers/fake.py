@@ -1,7 +1,9 @@
+import json
 import time
 from collections.abc import Iterator
 
 from supportdesk.config import get_settings
+from supportdesk.modules.assistant.prompts import REFERENCE_MARKER, input_size
 from supportdesk.modules.assistant.providers.base import Delta, ProviderFailure
 
 
@@ -50,7 +52,9 @@ class FakeProvider:
         ):
             yield Delta(text="NO_ANSWER", input_tokens=0, output_tokens=0)
             return
-        source = messages[1]["content"].split("\n", 1)[-1]
+        source = json.loads(messages[0]["content"].split(REFERENCE_MARKER, 1)[1])[
+            "sources"
+        ][0]["text"]
         # This is an explicit fixture excerpt, never presented as a live model answer.
         answer = "پاسخ نمایشی بر پایهٔ سند: " + source[:900] + " [S1]"
         if scenario == "invalid_citation":
@@ -61,6 +65,6 @@ class FakeProvider:
             time.sleep(0.15 if scenario == "slow" else 0.01)
             yield Delta(text=answer[index : index + 24])
         yield Delta(
-            input_tokens=sum(len(m["content"].encode()) for m in messages),
+            input_tokens=input_size(messages),
             output_tokens=len(answer.encode()),
         )

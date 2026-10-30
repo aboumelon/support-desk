@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from supportdesk.api.errors import Problem
+from supportdesk.config import get_settings
 from supportdesk.infrastructure.database import now
 from supportdesk.modules.conversations.models import CommandReceipt, Conversation
 from supportdesk.modules.conversations.schemas import (
@@ -114,6 +115,7 @@ async def create_conversation(
     prior = await receipt(db, actor, "create_conversation", key, {})
     if prior:
         return ConversationView.model_validate(prior)
+    await rate_limit("conversation-global", "all", 2000, 86400, db=db)
     from supportdesk.modules.assistant.service import ready
     from supportdesk.modules.workspaces.models import Workspace
 
@@ -121,6 +123,7 @@ async def create_conversation(
     bot_ready = (
         workspace is not None
         and workspace.ai_enabled
+        and get_settings().ai_enabled_for_public()
         and await ready(db, actor.workspace_id)
     )
     conversation = Conversation(
@@ -176,6 +179,7 @@ async def send(
     ):
         raise Problem(409, "NOT_ASSIGNED")
     await rate_limit("message", str(actor.id), 20, db=db)
+    await rate_limit("message-global", "all", 5000, 86400, db=db)
     message = Message(
         id=uuid4(),
         workspace_id=actor.workspace_id,

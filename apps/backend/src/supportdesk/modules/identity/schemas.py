@@ -15,6 +15,7 @@ class Membership(BaseModel):
     actor_id: UUID
     name: str
     role: str
+    fictional_data: bool = False
 
 
 class SessionView(BaseModel):
@@ -26,6 +27,13 @@ class SessionView(BaseModel):
     public_key: str | None = None
     memberships: list[Membership] = []
     provider_mode: str
+    fictional_data: bool = False
+    ai_available: bool = True
+
+
+class PublicCapabilities(BaseModel):
+    demo_available: bool
+    ai_mode: Literal["simulated", "live", "disabled"]
 
 
 class WorkspaceView(BaseModel):

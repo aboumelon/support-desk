@@ -11,13 +11,7 @@ type Dialog =
   | { type: "upload"; document?: Document }
   | { type: "withdraw"; document: Document }
   | null;
-export function Knowledge({
-  session,
-  settingsOnly = false,
-}: {
-  session: Session;
-  settingsOnly?: boolean;
-}) {
+export function Knowledge({ session }: { session: Session }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const workspace = session.memberships[0]?.workspace_id ?? "";
@@ -66,27 +60,30 @@ export function Knowledge({
           <p className="eyebrow">
             {t("workspace")} / {session.memberships[0].name}
           </p>
-          <h1>{t(settingsOnly ? "settings" : "knowledge")}</h1>
+          <h1>{t("knowledge")}</h1>
           <p>{t("knowledgeHint")}</p>
         </div>
-        {!settingsOnly && (
-          <Button
-            onClick={() => {
-              setError("");
-              setDialog({ type: "upload" });
-            }}
-          >
-            <Icon name="plus" />
-            {t("addDocument")}
-          </Button>
-        )}
+        <Button
+          onClick={() => {
+            setError("");
+            setDialog({ type: "upload" });
+          }}
+        >
+          <Icon name="plus" />
+          {t("addDocument")}
+        </Button>
       </header>
       <section className={`activation-panel ${!hasReady ? "disabled" : ""}`}>
         <div>
           <strong>{t("enableAssistant")}</strong>
-          <p>{t(hasReady ? "groundedBody" : "nothingReady")}</p>
           <p>
-            {t(session.provider_mode === "fake" ? "fixtureNote" : "liveMode")}
+            {t(
+              session.ai_available === false
+                ? "assistantDisabled"
+                : hasReady
+                  ? "groundedBody"
+                  : "nothingReady",
+            )}
           </p>
         </div>
         <label className="switch">
@@ -96,7 +93,12 @@ export function Knowledge({
             aria-label={t("enableAssistant")}
             checked={enabled}
             aria-busy={busy}
-            disabled={busy || !details.data || (!hasReady && !enabled)}
+            disabled={
+              busy ||
+              !details.data ||
+              (session.ai_available === false && !enabled) ||
+              (!hasReady && !enabled)
+            }
             onChange={async (event) => {
               const value = event.target.checked;
               setPendingEnabled(value);
@@ -138,141 +140,139 @@ export function Knowledge({
           {error || t("error")}
         </p>
       )}
-      {!settingsOnly && (
-        <section className="document-section">
-          <div className="section-heading">
-            <div>
-              <h2>{t("documents")}</h2>
-              <span>
-                {t("documentCount", { count: documents.data?.length ?? 0 })}
-              </span>
-            </div>
-            <p>{t("uploadReal")}</p>
+      <section className="document-section">
+        <div className="section-heading">
+          <div>
+            <h2>{t("documents")}</h2>
+            <span>
+              {t("documentCount", { count: documents.data?.length ?? 0 })}
+            </span>
           </div>
-          {documents.isLoading ? (
-            <p className="list-notice" role="status">
-              {t("loading")}
-            </p>
-          ) : documents.error ? (
-            <p className="list-notice form-error" role="alert">
-              {t("error")}
-            </p>
-          ) : !documents.data?.length ? (
-            <EmptyState title={t("emptyKnowledge")} text={t("knowledgeHint")} />
-          ) : (
-            <div className="document-table">
-              <div className="doc-row doc-head">
-                <span>{t("documentTitle")}</span>
-                <span>{t("versionAndFile")}</span>
-                <span>{t("status")}</span>
-                <span>{t("actions")}</span>
-              </div>
-              {documents.data.map((doc) => {
-                const { active, latest, usable, status } =
-                  documentPresentation(doc);
-                return (
-                  <article
-                    className="document-entry"
-                    key={doc.id}
-                    data-testid={`document-${doc.id}`}
-                  >
-                    <div className="doc-row">
-                      <span className="doc-title">
-                        <i>
-                          <Icon name="book" size={18} />
-                        </i>
-                        <strong>{doc.title}</strong>
-                      </span>
-                      <span className="doc-file">
-                        {usable ? (
-                          <>
-                            <b>
-                              {t("activeVersion")}{" "}
-                              <bdi dir="ltr">v{active!.version_no}</bdi>
-                            </b>
-                            <small>
-                              {active?.id && (
-                                <bdi dir="ltr">#{reference(active.id)}</bdi>
-                              )}
-                            </small>
-                          </>
-                        ) : (
-                          <small>{t("noActiveVersion")}</small>
-                        )}
-                        {latest && latest.id !== active?.id && (
-                          <small>
-                            {t("latestVersion")}{" "}
-                            <bdi dir="ltr">v{latest.version_no}</bdi>
-                          </small>
-                        )}
-                      </span>
-                      <span className="doc-state">
-                        <em className={`doc-status status-${status}`}>
-                          {["pending", "processing"].includes(status) && <i />}
-                          {t(status)}
-                        </em>
-                        {usable && latest?.id !== active?.id && (
-                          <small>{t("activePreserved")}</small>
-                        )}
-                        {latest?.error_code && (
-                          <small className="form-error">
-                            {t("jobFailed")} ·{" "}
-                            <bdi dir="ltr">{latest.error_code}</bdi>
-                          </small>
-                        )}
-                      </span>
-                      <span className="doc-actions">
-                        <button
-                          onClick={() =>
-                            setDialog({ type: "upload", document: doc })
-                          }
-                          disabled={Boolean(doc.withdrawn_at)}
-                        >
-                          {t("replaceDocument")}
-                        </button>
-                        <button
-                          onClick={() =>
-                            setDialog({ type: "withdraw", document: doc })
-                          }
-                          disabled={Boolean(doc.withdrawn_at) || busy}
-                        >
-                          {t("withdraw")}
-                        </button>
-                      </span>
-                    </div>
-                    <details className="version-list">
-                      <summary>{t("versionHistory")}</summary>
-                      <ul>
-                        {[...doc.versions]
-                          .sort((a, b) => b.version_no - a.version_no)
-                          .map((version) => (
-                            <li key={version.id}>
-                              <bdi dir="ltr">
-                                v{version.version_no} · #{reference(version.id)}
-                              </bdi>
-                              <span>{t(version.status)}</span>
-                              {usable && version.id === active?.id && (
-                                <strong>{t("activeVersion")}</strong>
-                              )}
-                            </li>
-                          ))}
-                      </ul>
-                    </details>
-                  </article>
-                );
-              })}
+          <p>{t("uploadReal")}</p>
+        </div>
+        {documents.isLoading ? (
+          <p className="list-notice" role="status">
+            {t("loading")}
+          </p>
+        ) : documents.error ? (
+          <p className="list-notice form-error" role="alert">
+            {t("error")}
+          </p>
+        ) : !documents.data?.length ? (
+          <EmptyState title={t("emptyKnowledge")} text={t("knowledgeHint")} />
+        ) : (
+          <div className="document-table">
+            <div className="doc-row doc-head">
+              <span>{t("documentTitle")}</span>
+              <span>{t("versionAndFile")}</span>
+              <span>{t("status")}</span>
+              <span>{t("actions")}</span>
             </div>
-          )}
-          <button
-            className="upload-zone"
-            onClick={() => setDialog({ type: "upload" })}
-          >
-            <Icon name="upload" />
-            <strong>{t("chooseFile")}</strong>
-            <small>{t("uploadHint")}</small>
-          </button>
-        </section>
-      )}
+            {documents.data.map((doc) => {
+              const { active, latest, usable, status } =
+                documentPresentation(doc);
+              return (
+                <article
+                  className="document-entry"
+                  key={doc.id}
+                  data-testid={`document-${doc.id}`}
+                >
+                  <div className="doc-row">
+                    <span className="doc-title">
+                      <i>
+                        <Icon name="book" size={18} />
+                      </i>
+                      <strong>{doc.title}</strong>
+                    </span>
+                    <span className="doc-file">
+                      {usable ? (
+                        <>
+                          <b>
+                            {t("activeVersion")}{" "}
+                            <bdi dir="ltr">v{active!.version_no}</bdi>
+                          </b>
+                          <small>
+                            {active?.id && (
+                              <bdi dir="ltr">#{reference(active.id)}</bdi>
+                            )}
+                          </small>
+                        </>
+                      ) : (
+                        <small>{t("noActiveVersion")}</small>
+                      )}
+                      {latest && latest.id !== active?.id && (
+                        <small>
+                          {t("latestVersion")}{" "}
+                          <bdi dir="ltr">v{latest.version_no}</bdi>
+                        </small>
+                      )}
+                    </span>
+                    <span className="doc-state">
+                      <em className={`doc-status status-${status}`}>
+                        {["pending", "processing"].includes(status) && <i />}
+                        {t(status)}
+                      </em>
+                      {usable && latest?.id !== active?.id && (
+                        <small>{t("activePreserved")}</small>
+                      )}
+                      {latest?.error_code && (
+                        <small className="form-error">
+                          {t("jobFailed")} ·{" "}
+                          <bdi dir="ltr">{latest.error_code}</bdi>
+                        </small>
+                      )}
+                    </span>
+                    <span className="doc-actions">
+                      <button
+                        onClick={() =>
+                          setDialog({ type: "upload", document: doc })
+                        }
+                        disabled={Boolean(doc.withdrawn_at)}
+                      >
+                        {t("replaceDocument")}
+                      </button>
+                      <button
+                        onClick={() =>
+                          setDialog({ type: "withdraw", document: doc })
+                        }
+                        disabled={Boolean(doc.withdrawn_at) || busy}
+                      >
+                        {t("withdraw")}
+                      </button>
+                    </span>
+                  </div>
+                  <details className="version-list">
+                    <summary>{t("versionHistory")}</summary>
+                    <ul>
+                      {[...doc.versions]
+                        .sort((a, b) => b.version_no - a.version_no)
+                        .map((version) => (
+                          <li key={version.id}>
+                            <bdi dir="ltr">
+                              v{version.version_no} · #{reference(version.id)}
+                            </bdi>
+                            <span>{t(version.status)}</span>
+                            {usable && version.id === active?.id && (
+                              <strong>{t("activeVersion")}</strong>
+                            )}
+                          </li>
+                        ))}
+                    </ul>
+                  </details>
+                </article>
+              );
+            })}
+          </div>
+        )}
+        <button
+          className="upload-zone"
+          onClick={() => setDialog({ type: "upload" })}
+        >
+          <Icon name="upload" />
+          <strong>{t("chooseFile")}</strong>
+          <small>{t("uploadHint")}</small>
+        </button>
+      </section>
       {dialog?.type === "upload" && (
         <UploadDialog
           key={dialog.document?.id ?? "new"}

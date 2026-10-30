@@ -1,7 +1,7 @@
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import CheckConstraint, ForeignKeyConstraint, UniqueConstraint
+from sqlalchemy import CheckConstraint, ForeignKeyConstraint, Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -11,6 +11,12 @@ from supportdesk.infrastructure.database import Base, Identified, Timestamped
 class Message(Identified, Timestamped, Base):
     __tablename__ = "messages"
     __table_args__ = (
+        Index(
+            "ix_message_body_search",
+            "body",
+            postgresql_using="gin",
+            postgresql_ops={"body": "gin_trgm_ops"},
+        ),
         UniqueConstraint("conversation_id", "event_seq", name="uq_message_sequence"),
         UniqueConstraint(
             "conversation_id",

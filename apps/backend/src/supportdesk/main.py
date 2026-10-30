@@ -110,7 +110,7 @@ def create_app() -> FastAPI:
                 revision = await db.scalar(
                     text("SELECT version_num FROM alembic_version")
                 )
-            if revision != "0007":
+            if revision != "0008":
                 raise Problem(503, "SCHEMA_INCOMPATIBLE")
         except Problem:
             raise

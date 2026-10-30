@@ -28,5 +28,5 @@ fi
 setsid nohup bash scripts/dev.sh >.local/dev.log 2>&1 </dev/null &
 printf '%s\n' "$!" >.local/dev.pid
 export UV_CACHE_DIR=/tmp/supportdesk-uv-cache
-uv run --project apps/backend --all-extras python -m supportdesk.cli.wait_demo
+uv run --locked --project apps/backend --all-extras python -m supportdesk.cli.wait_demo
 printf '%s\n' 'SupportDesk is running at http://localhost:5173'

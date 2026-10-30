@@ -38,6 +38,12 @@ export function Desk({
   );
   const [filter, setFilter] = useState("open");
   const [query, setQuery] = useState("");
+  const [search, setSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(query.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [query]);
+  const shortSearch = search.length === 1;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [mobileDetail, setMobileDetail] = useState(
@@ -54,15 +60,17 @@ export function Desk({
     }
   }, [initialConversation]);
   const list = useInfiniteQuery({
-    queryKey: ["conversations", audience, workspace, filter],
-    initialPageParam: undefined as number | undefined,
+    queryKey: ["conversations", audience, workspace, filter, search],
+    enabled: !shortSearch,
+    initialPageParam: undefined as string | undefined,
     refetchInterval: 5000,
     queryFn: async ({ pageParam }) => {
       const query = {
         status: filter === "resolved" ? "resolved" : "open",
         controller: filter === "queue" ? "queue" : undefined,
         assigned_actor_id: filter === "mine" ? actor : undefined,
-        before: pageParam,
+        cursor: pageParam,
+        q: search.length >= 2 ? search : undefined,
       };
       const result =
         audience === "customer"
@@ -74,17 +82,20 @@ export function Desk({
               { params: { path: { workspace_id: workspace }, query } },
             );
       if (!result.data) throw Error();
-      return result.data;
+      return {
+        items: result.data,
+        next: result.response.headers.get("X-Next-Cursor") ?? undefined,
+      };
     },
-    getNextPageParam: (last) =>
-      last.length === 50
-        ? Math.round(new Date(last.at(-1)!.updated_at).getTime() * 1000)
-        : undefined,
+    getNextPageParam: (last) => last.next,
   });
-  const conversations = list.data?.pages.flat() ?? [];
-  const visible = conversations.filter((c) =>
-    c.id.toLowerCase().includes(query.trim().toLowerCase()),
-  );
+  const visible = [
+    ...new Map(
+      (list.data?.pages.flatMap((page) => page.items) ?? []).map(
+        (conversation) => [conversation.id, conversation],
+      ),
+    ).values(),
+  ];
   useEffect(() => {
     if (!selected && !narrow && visible[0]) setSelected(visible[0].id);
   }, [list.data, narrow, selected]);
@@ -133,7 +144,6 @@ export function Desk({
             </p>
             <h1>{t(audience === "staff" ? "inbox" : "myChats")}</h1>
           </div>
-          <span className="count">{conversations.length}</span>
         </div>
         {audience === "customer" && (
           <Button className="new-chat" onClick={create} disabled={busy}>
@@ -146,8 +156,9 @@ export function Desk({
           <input
             className="field"
             aria-label={t("search")}
-            placeholder={t("search")}
+            placeholder={t("searchShort")}
             value={query}
+            maxLength={120}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
@@ -171,7 +182,9 @@ export function Desk({
           ))}
         </div>
         <div className="conversation-list">
-          {list.isLoading ? (
+          {shortSearch ? (
+            <p className="list-notice">{t("searchHint")}</p>
+          ) : query.trim() !== search || list.isLoading ? (
             <p className="list-notice" role="status">
               {t("loading")}
             </p>
@@ -198,11 +211,18 @@ export function Desk({
                 </span>
                 <span className="row-copy">
                   <span className="row-top">
-                    <strong>{t("customer")}</strong>
+                    <strong dir="auto">
+                      {c.title || t("untitledConversation")}
+                    </strong>
                     <time dateTime={c.updated_at}>
                       {formatTime(c.updated_at)}
                     </time>
                   </span>
+                  {c.last_message_preview && (
+                    <span className="row-preview" dir="auto">
+                      {c.last_message_preview}
+                    </span>
+                  )}
                   <span className="row-subject">
                     <bdi dir="ltr">#{reference(c.id)}</bdi>
                     {c.unread_count > 0 && (
@@ -294,6 +314,16 @@ function ConversationPane({
           title={t(state.snapshot.error ? "error" : "loading")}
           text={t("selectConversation")}
         />
+        {state.snapshot.error && (
+          <div className="empty-state">
+            <Button onClick={() => state.snapshot.refetch()}>
+              {t("retry")}
+            </Button>
+            <Button variant="secondary" onClick={onBack}>
+              {t("backToList")}
+            </Button>
+          </div>
+        )}
       </section>
     );
   const conversation = state.snapshot.data.conversation;
@@ -530,9 +560,6 @@ function ConversationPane({
             </div>
           </form>
           <div className="chat-note">
-            <span>
-              {t(session.provider_mode === "fake" ? "fixtureNote" : "liveMode")}
-            </span>
             {state.peerOnline && <span>{t("peerOnline")}</span>}
           </div>
         </div>

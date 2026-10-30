@@ -72,8 +72,24 @@ async def rate_limit(
 
 
 def remote_identity(request: Request) -> str:
-    # Forwarded headers are deliberately not trusted here.
-    return request.client.host if request.client else "unknown"
+    from ipaddress import ip_address, ip_network
+
+    remote = request.client.host if request.client else "unknown"
+    proxies = [ip_network(value) for value in get_settings().trusted_proxies]
+    try:
+        peer = ip_address(remote)
+        if not any(peer in network for network in proxies):
+            return remote
+        chain = request.headers.get("x-forwarded-for", "").split(",")
+        if len(chain) > 10:
+            return remote
+        for value in reversed(chain):
+            address = ip_address(value.strip())
+            if not any(address in network for network in proxies):
+                return str(address)
+    except ValueError:
+        return remote
+    return remote
 
 
 async def issue_session(
@@ -184,16 +200,24 @@ async def workspace_actor(
 async def session_view(db: AsyncSession, principal: Principal) -> SessionView:
     memberships = []
     if principal.user:
-        rows = await db.execute(
-            select(Actor, Workspace)
-            .join(Workspace)
-            .where(
-                Actor.user_id == principal.user.id,
-                Actor.active.is_(True),
+        rows = (
+            await db.execute(
+                select(Actor, Workspace)
+                .join(Workspace)
+                .where(
+                    Actor.user_id == principal.user.id,
+                    Actor.active.is_(True),
+                )
             )
-        )
+        ).all()
         memberships = [
-            Membership(workspace_id=w.id, actor_id=a.id, name=w.name, role=a.role or "")
+            Membership(
+                workspace_id=w.id,
+                actor_id=a.id,
+                name=w.name,
+                role=a.role or "",
+                fictional_data=w.fictional_data,
+            )
             for a, w in rows
             if not w.expires_at or w.expires_at > now()
         ]
@@ -211,4 +235,7 @@ async def session_view(db: AsyncSession, principal: Principal) -> SessionView:
         public_key=workspace.public_key if workspace else None,
         memberships=memberships,
         provider_mode=get_settings().llm_provider,
+        fictional_data=bool(workspace and workspace.fictional_data)
+        or bool(memberships and all(m.fictional_data for m in memberships)),
+        ai_available=get_settings().ai_enabled_for_public(),
     )

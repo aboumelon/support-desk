@@ -4,8 +4,11 @@ from typing import Protocol
 
 
 class ProviderFailure(Exception):
-    def __init__(self, code: str, retryable: bool = False):
+    def __init__(
+        self, code: str, retryable: bool = False, retry_after: float | None = None
+    ):
         self.code, self.retryable = code, retryable
+        self.retry_after = retry_after
         super().__init__(code)
 
 

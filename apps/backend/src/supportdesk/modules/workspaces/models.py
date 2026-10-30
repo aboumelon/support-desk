@@ -19,6 +19,7 @@ class Workspace(Identified, Timestamped, Base):
     public_key: Mapped[str] = mapped_column(unique=True)
     name: Mapped[str]
     ai_enabled: Mapped[bool] = mapped_column(default=False)
+    fictional_data: Mapped[bool] = mapped_column(default=False)
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 

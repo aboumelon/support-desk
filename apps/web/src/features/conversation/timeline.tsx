@@ -180,7 +180,6 @@ export function Timeline({
                   </div>
                   <div className="timeline-content">
                     <strong>{t(item.label)}</strong>
-                    <span>{t("persistedEvent")}</span>
                     <time dateTime={item.time}>{formatTime(item.time)}</time>
                   </div>
                 </div>

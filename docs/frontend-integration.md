@@ -1,6 +1,52 @@
 # Tarvio frontend integration
 
-Status: connected implementation, local browser workflows and container assets verified.
+## Current portfolio revision (2026-10-30)
+
+The current implementation retains the visual system, local fonts, route boundaries,
+source sheets and responsive panes from the original integration below. Current changes:
+
+- Inbox queries use authorized backend text/reference search and opaque page cursors;
+  first-customer-message titles and last-message previews are persisted-data read models.
+  No loaded-row total or invented customer name is shown.
+- `/app/$workspaceId/settings` redirects to Knowledge. Only Knowledge owns activation;
+  the rail contains Inbox and Knowledge plus the existing audience/logout controls.
+- Entry reads minimal public capabilities and handles disabled demos, loading and retry.
+  The single compact indicator separates fictional data from simulated/live/disabled AI.
+- Copy is shorter and remains centralized in `locales/fa.json`. The landing scene is
+  explicitly illustrative. Fictional fixtures now use Tarvio Cloud.
+- Direct/expired/unauthorized routes, server search beyond the first 50 conversations,
+  separate audience logout, capability failures and disabled-entry behavior have fresh
+  browser coverage alongside the existing real messaging/knowledge/recovery flows.
+
+Fresh verification: 8/8 browser cases passed in 1.9 minutes; 7/7 frontend unit cases,
+lint, TypeScript, formatting, generated-contract drift and production build passed.
+The final responsive-only rerun passed in 25.0 seconds after the title-direction and
+short search-placeholder adjustment. PostgreSQL/Redis/Celery and pinned E5 were real;
+answer generation was explicitly simulated. Two capability-display cases stub only
+the capability response, not chat or persisted application data.
+
+Current evidence: [portfolio manifest](evidence/portfolio.json),
+[progress and exact commands](progress.md), [provider/deployment handoff](portfolio-release.md).
+Current images are kept separately under `evidence/portfolio/`; the historical images
+and manifests below are retained unchanged.
+
+| View | Desktop | Tablet | Narrow tablet | Mobile |
+| --- | --- | --- | --- | --- |
+| Operator | [1440](evidence/portfolio/operator-1440.png) | [1024](evidence/portfolio/operator-1024.png) | [768](evidence/portfolio/operator-768.png) | [390](evidence/portfolio/operator-390.png) |
+| Customer | [1440](evidence/portfolio/customer-1440.png) | [1024](evidence/portfolio/customer-1024.png) | [768](evidence/portfolio/customer-768.png) | [390](evidence/portfolio/customer-390.png) |
+| Knowledge | [1440](evidence/portfolio/knowledge-1440.png) | [1024](evidence/portfolio/knowledge-1024.png) | [768](evidence/portfolio/knowledge-768.png) | [390](evidence/portfolio/knowledge-390.png) |
+| Source | — | [1024](evidence/portfolio/source-1024.png) | [768](evidence/portfolio/source-768.png) | [390](evidence/portfolio/source-390.png) |
+| Entry | [1440](evidence/portfolio/entry-1440.png) | — | — | [390](evidence/portfolio/entry-390.png) |
+| Login | [1440](evidence/portfolio/login-1440.png) | — | — | [390](evidence/portfolio/login-390.png) |
+
+Rendered desktop and mobile screens were inspected, including tablet breakpoints,
+source focus/backdrop and full-page Knowledge. Full-page captures show the fixed
+mobile rail at the original viewport boundary. A reduced 390×520 viewport/focused
+composer is browser emulation; a physical mobile keyboard remains unverified.
+
+## Historical prototype integration (2026-10-29)
+
+Status at the checkpoint below: connected implementation, local browser workflows and container assets verified.
 Source archive: `/home/armin/Downloads/Tarvio Support Workspace Prototype (1).zip`.
 SHA-256: `acd8125df385d0ed1023d778946b5807bddaf982d3322360acf3c3b5b854a8c4`.
 Reference extracted under ignored `.local/references/tarvio-latest/`. Its configuration,

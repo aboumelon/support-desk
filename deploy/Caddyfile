@@ -1,18 +1,27 @@
+{
+	servers {
+		trusted_proxies static {$EDGE_TRUSTED_PROXIES:127.0.0.1/32}
+		trusted_proxies_strict
+		client_ip_headers X-Forwarded-For
+	}
+}
 :8080 {
-    request_body {
-        max_size 11MB
-    }
-    header {
-        X-Content-Type-Options nosniff
-        Referrer-Policy same-origin
-        Content-Security-Policy "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; base-uri 'self'"
-    }
-    handle /api/* {
-        reverse_proxy api:8000
-    }
-    handle {
-        root * /srv
-        try_files {path} /index.html
-        file_server
-    }
+	request_body {
+		max_size 11MB
+	}
+	header {
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+		Content-Security-Policy "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; frame-ancestors 'none'; base-uri 'self'"
+	}
+	handle /api/* {
+		reverse_proxy api:8000 {
+			header_up X-Forwarded-For {client_ip}
+		}
+	}
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
 }

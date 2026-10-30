@@ -37,7 +37,7 @@ async def clean_database(database_test_lock):
         await db.execute(
             text(
                 "TRUNCATE sessions, workspace_actors, workspaces, staff_users, "
-                "rate_limit_buckets CASCADE"
+                "rate_limit_buckets, provider_usage_periods CASCADE"
             )
         )
     yield

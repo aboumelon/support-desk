@@ -3,14 +3,14 @@
 ## Development
 
 From the root start `docker compose -f compose.yaml -f compose.dev.yaml up -d postgres redis`.
-In `apps/backend`: `uv sync --locked --all-extras`, `uv run --all-extras alembic upgrade head`,
-`uv run --all-extras python -m supportdesk.cli.seed_demo`,
-`uv run --all-extras python -m supportdesk.cli.provision_embeddings`, then
-`uv run --all-extras python -m supportdesk.cli.seed_knowledge`.
+In `apps/backend`: `uv sync --locked --all-extras`, `uv run --locked --all-extras alembic upgrade head`,
+`uv run --locked --all-extras python -m supportdesk.cli.seed_demo`,
+`uv run --locked --all-extras python -m supportdesk.cli.provision_embeddings`, then
+`uv run --locked --all-extras python -m supportdesk.cli.seed_knowledge`.
 
-Start API: `uv run --all-extras uvicorn supportdesk.main:create_app --factory --host 127.0.0.1`.
-Start dispatcher: `uv run --all-extras python -m supportdesk.workers.dispatcher`.
-Start worker: `uv run --all-extras celery -A supportdesk.workers.celery_app:app worker -Q ai,ingestion --concurrency=1`.
+Start API: `uv run --locked --all-extras uvicorn supportdesk.main:create_app --factory --host 127.0.0.1 --no-proxy-headers`.
+Start dispatcher: `uv run --locked --all-extras python -m supportdesk.workers.dispatcher`.
+Start worker: `uv run --locked --all-extras celery -A supportdesk.workers.celery_app:app worker -Q ai,ingestion --concurrency=1`.
 From root: `pnpm install --frozen-lockfile`; `pnpm --filter @supportdesk/web dev`.
 Use `http://localhost:5173`; wait for five documents to become ready before opening a new demo.
 After initial setup, `bash scripts/start-local.sh` from the root restarts the local
@@ -46,22 +46,41 @@ database timestamps and are not provider percentile measurements.
 
 ## Production preparation
 
-Use `deploy/compose.production.yaml`, a strong ignored `.env.production`, a restricted
-runtime role and a separate migration-owner URL. Set exact HTTPS origins, secure cookies,
-private storage/model volumes and `DEMO_MODE=false`. Run migrations once before API rollout.
-Provision the pinned model explicitly in the worker image/volume. Create the initial
-administrator using `python -m supportdesk.cli.create_staff --email ... --workspace-key ... --name ...`.
-Place a TLS terminator before the loopback gateway. Production container and restore
-verification outcomes are recorded in `progress.md`; do not infer successful deployment
-from the presence of a Compose file.
+Use `deploy/compose.production.yaml` and a private file based on
+`deploy/production.env.example`. The exact startup procedure is:
 
-Daily retention is a one-shot `purge` maintenance service. The example units under
-`deploy/systemd/` assume `/opt/supportdesk`; change that path for the installation,
-then install/enable `supportdesk-retention.timer` on the deployment host. They are
-templates and have not been installed on this development machine. Verify the first
-run and monitor the timer before relying on retention. Keep operational logs for
-14 days using the deployment host's log collector policy. Off-host backup scheduling
-requires the actual encrypted destination and credentials.
+```bash
+PORTFOLIO_ENV_FILE=.env.production bash scripts/production-start.sh
+```
+
+It builds all three images, waits for private dependencies, applies schema 0008,
+creates the restricted runtime role, provisions pinned E5, seeds fictional templates,
+starts API/dispatcher/worker/retention and waits for current fixture hashes before
+the gateway. Runtime containers do not receive the owner URL. Use exact HTTPS origins,
+secure cookies, immutable `RELEASE_ID` tags and persistent DB/files/models/Redis volumes.
+Leave `DEMO_MODE=false` for private installations, or explicitly enable isolated,
+expiring public demos. Production template seeding creates no reusable staff account;
+create a private administrator with `supportdesk.cli.create_staff` when needed.
+
+The gateway binds loopback by default. Freestyle ingress needs `GATEWAY_BIND_ADDRESS=0.0.0.0`,
+an authorized TLS rule/firewall and actual edge CIDRs. Uvicorn forwarding is disabled;
+the application trusts only the fixed gateway and Caddy validates the edge chain before
+replacing forwarding headers. See [the complete Freestyle handoff](portfolio-release.md)
+for lifecycle limits, proxy settings, source transfer and missing deployment inputs.
+Never trust all proxy addresses or expose PostgreSQL/Redis ports.
+
+Shared daily AI reservations, concurrency/queue, demo/upload/storage and ingestion
+limits are documented in that handoff. Public live generation is separately gated by
+`PUBLIC_LIVE_AI_ENABLED`; provider terms must permit the intended audience. A live
+failure never selects the simulated adapter. Model context does not enlarge the
+application input/output reservation. Inspect unknown-usage charges when troubleshooting.
+
+The supervised `retention` role runs expiry/retention hourly with a 300-second subprocess
+bound and database exclusion lock. Verify its logs after rollout. `purge` remains a
+one-shot maintenance command. The old systemd templates are alternatives; do not enable
+both schedules. Compose logs rotate at five 10 MiB files per service; a 14-day policy
+requires a host collector. No host timer or external collector was installed locally.
+Keep off-host backup scheduling separate and configure its encrypted destination.
 
 ## Backup and restore
 
@@ -72,6 +91,14 @@ Restore into a new database with `pg_restore`, restore files into a separate pri
 folder and verify every referenced artifact hash before switching traffic. Never test
 a restore by overwriting the live database. RPO 24 hours / RTO 2 hours are targets until
 an off-host encrypted restore has been timed on the deployment host.
+
+For the complete Compose package, `scripts/production-backup.sh` coordinates stopped
+writers, PostgreSQL dump, private artifacts and a hash manifest, encrypts with the
+configured age recipient and restarts writers through a trap. The companion
+`scripts/production-restore-drill.sh` restores to a new `*_test` database and directory.
+The portfolio local drill verified 87 artifact hashes; it explicitly used unencrypted
+local storage and does not satisfy encrypted off-host recovery. Exact commands,
+rollback/schema compatibility and host gates are in the [portfolio handoff](portfolio-release.md#backup-restore-and-rollback).
 
 For the fictional local development setup, `bash scripts/restore-drill.sh` creates a new
 timestamped `*_test` database and a private `.local/restore-*` copy, restores the dump and

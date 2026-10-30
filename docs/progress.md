@@ -1,6 +1,95 @@
 # SupportDesk implementation progress
 
-Last updated: 2026-10-29 (Asia/Tehran). Authority: [original design](../supportdesk-system-design-v1.md).
+Last updated: 2026-10-30 (Asia/Tehran). Authority: [original design](../supportdesk-system-design-v1.md).
+
+## Portfolio release preparation (2026-10-30)
+
+- [x] Authorized server-side search/cursors, persisted titles/previews, focused navigation and accurate public capabilities/demo copy.
+- [x] Compatible single-system prompts, strict streamed-provider parsing, bounded timeout/retry/usage accounting and opt-in live evaluation.
+- [x] Shared atomic AI budget/admission, global ingestion/storage/demo limits, trusted proxy handling and scheduled expiry cleanup.
+- [x] Complete-stack Freestyle package, restricted roles, health/startup/recovery, backup and rollback instructions.
+- [ ] Final image revision/startup check and machine-readable handoff evidence.
+
+Implemented behavior and host instructions: [portfolio handoff](portfolio-release.md).
+Current UI mappings/screenshots: [frontend integration](frontend-integration.md).
+The original design, existing lockfiles and unrelated untracked `skills/` were preserved.
+Historical release, Tarvio and benchmark reports/images below remain tied to their own
+source revisions and were not overwritten or used as current performance proof.
+
+Fresh local results:
+
+- Backend: **73 passed in 153.68s**, using isolated PostgreSQL `supportdesk_test` and Redis 15. Includes authorized search/cursors, cross-workspace budgets/admission, unknown-usage retention after expiry, trusted forwarding, uploads, prompt/SSE/deadline/rate-limit cases and actual Redis/Celery crash/lease recovery. Ruff format (92 files), Ruff lint, strict mypy (64 source files), `alembic check` and migration 0008 upgrades passed.
+- Frontend: formatting, ESLint, TypeScript, **7 unit cases**, generated-contract drift and production build passed. Main entry remains about 415 KiB before gzip; this is build output, not a performance target.
+- Browser: **8 passed in 1.9m** with real API/PostgreSQL/Redis/dispatcher/Celery/E5 and explicit fake generation. Covers first-page-independent search (56 conversations), Settings redirect, capability-disabled/retry states, separate audience logout, expired staff route, messaging/idempotent retry/offline/refresh/reconnect, citations/source failure, handoff during generation, real ingestion/withdrawal/permissions, 105 control events and responsive accessibility. Final responsive-only rerun: **1 passed in 25.0s** after text-direction/placeholder adjustments.
+- Current screenshots are separately stored in `evidence/portfolio/`: customer/operator/knowledge at 1440/1024/768/390, source sheets at 1024/768/390 and entry/login at 1440/390. Rendered desktop, tablet and mobile screens were inspected. Reduced-height focused composer was checked in browser emulation; no physical mobile keyboard claim.
+- Fresh 40-case Tarvio fixture report: recall@5 **1.0**, handoff **0.975**, no source-isolation failures, valid labels. `evidence/rag-portfolio.json` records actual E5 retrieval and deterministic answers; no live/human faithfulness claim.
+- Isolated production-shaped project `supportdesk-portfolio-check`: private PostgreSQL/Redis and named DB/files/model volumes, loopback gateway 5182, restricted runtime role, pinned offline model provisioning and five ready fixture hashes passed. Actual HTTP messaging/retry/citation/handoff/claim/reply/resolve/reopen/upload/withdrawal and **10 ordered WebSocket replay events through Caddy** passed. Only gateway publishes a port; owner credentials are absent from runtime roles and runtime schema creation was denied.
+- Trusted synthetic edge addresses get independent session buckets; six attempts with spoofed forwarding from an untrusted API container still hit the same five/minute bucket (**200 × 5, then 429**). Actual Freestyle edge identity remains a host gate.
+- Full role/database/Redis restart preserved all **3 canonical smoke messages** in named volumes. Coordinated backup/restore to a new `*_test` database and private directory verified **87 artifact hashes**. This was explicitly unencrypted and local; encrypted off-host restore remains unverified.
+
+Commands run from root (private environment/session files remain ignored):
+
+```bash
+pnpm exec prettier --check apps/web/src apps/web/e2e apps/web/index.html apps/web/package.json
+pnpm lint
+pnpm typecheck
+pnpm --filter @supportdesk/web test
+pnpm contracts:generate
+pnpm contracts:check
+pnpm build
+FAKE_SCENARIO=slow bash scripts/start-local.sh
+pnpm --filter @supportdesk/web test:e2e
+pnpm --filter @supportdesk/web test:e2e --grep 'desktop/tablet/mobile'
+bash scripts/start-local.sh
+docker compose --env-file .local/portfolio.production.env -f deploy/compose.production.yaml config --quiet
+docker compose --env-file .local/portfolio.production.env -f deploy/compose.production.yaml build api worker gateway
+UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked --project apps/backend --all-extras python scripts/verify-production-stack.py
+UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked --project apps/backend --all-extras python scripts/verify-production-stack.py --resume
+PORTFOLIO_ENV_FILE=.local/portfolio.production.env ALLOW_UNENCRYPTED_LOCAL_BACKUP=1 bash scripts/production-backup.sh
+PORTFOLIO_ENV_FILE=.local/portfolio.production.env bash scripts/production-restore-drill.sh "$PRIVATE_BACKUP_DIRECTORY"
+```
+
+Backend commands from `apps/backend`:
+
+```bash
+UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked alembic upgrade head
+UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked alembic check
+UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked ruff format --check .
+UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked ruff check .
+UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked mypy src
+UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked --all-extras pytest -q
+UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked --all-extras python -m supportdesk.cli.evaluate_rag
+UV_CACHE_DIR=/tmp/supportdesk-uv-cache uv run --locked --all-extras python -m supportdesk.cli.evaluate_live --allow-live
+```
+
+The last command deliberately refused absent backend live configuration before any
+external inference. No successful live request, authenticated provider model listing,
+Freestyle account/VM operation, public endpoint, remote push or paid service occurred.
+Only secret presence was inspected; values are excluded from code, logs and evidence.
+Official AMD/Freestyle references and current public-use constraints are linked in the
+handoff. Public live admission defaults off; no fallback changes a live error to fake.
+
+Corrected intermediate failures: initial SSE mocks and formatting/types; a global
+concurrency test needed to advance its intentionally deferred five-second job; browser
+fixtures needed an explicit allowed Origin and message-scoped selectors after real
+titles/previews. A subsequent final usage-buffer change required an explicit narrowed
+integer type; the complete 73-case suite above passed afterward. An offline cache copy
+initially omitted shared symlink blobs; dereferencing them fixed pinned provisioning.
+The isolated Docker network initially collided with the fixed gateway and then chose
+the test edge address as bridge; explicit dynamic range and bridge settings corrected
+both, followed by actual bucket/restart verification. No development data was truncated.
+
+Remaining public-release inputs/gates: authorized Freestyle VM/account/domain and actual
+edge CIDRs/firewall; private production secrets; provider key/base/model/context and
+permitted public-use decision (or another compatible provider); encrypted backup
+recipient/destination and host restore; real HTTPS/WebSocket/cookie/two-visitor checks;
+physical keyboard check and independent human/blind quality evaluation. No historical
+load measurement is transferred to this revision or a new host.
+
+## Historical implementation record (through 2026-10-29)
+
+The sections below describe earlier checkpoints; the current status and commands above
+take precedence where behavior, schema, scheduling or verification counts changed.
 
 ## Completed and verified
 

@@ -9,6 +9,13 @@ knowledge management, entry and login. See the [frontend integration note](docs/
 for archive provenance, contract mappings, current checks and responsive screenshots.
 Internal service/package names remain SupportDesk.
 
+The portfolio revision adds authorized server-side inbox search, persisted message
+titles/previews, one Knowledge activation control, truthful public capabilities and
+installation-wide resource limits. The complete Compose package was checked locally;
+live generation and Freestyle deployment remain unverified. See the
+[portfolio handoff](docs/portfolio-release.md) for official provider terms, production
+startup, trusted proxies, backup/restore, rollback and missing host inputs.
+
 ```mermaid
 flowchart LR
     Browser[Persian React UI] -->|REST and WebSocket| API[FastAPI]
@@ -33,11 +40,11 @@ docker compose -f compose.yaml -f compose.dev.yaml up -d postgres redis
 cp .env.example .env
 cd apps/backend
 uv sync --locked --all-extras
-uv run alembic upgrade head
-uv run --all-extras python -m supportdesk.cli.seed_demo
-uv run --all-extras python -m supportdesk.cli.provision_embeddings
-uv run --all-extras python -m supportdesk.cli.seed_knowledge
-uv run --all-extras uvicorn supportdesk.main:create_app --factory --reload --host 127.0.0.1
+uv run --locked alembic upgrade head
+uv run --locked --all-extras python -m supportdesk.cli.seed_demo
+uv run --locked --all-extras python -m supportdesk.cli.provision_embeddings
+uv run --locked --all-extras python -m supportdesk.cli.seed_knowledge
+uv run --locked --all-extras uvicorn supportdesk.main:create_app --factory --reload --host 127.0.0.1 --no-proxy-headers
 ```
 
 In a second terminal at the repository root:
@@ -49,13 +56,13 @@ pnpm --filter @supportdesk/web dev
 
 Open http://localhost:5173 (use this exact origin). `/demo` creates an isolated expiring
 workspace with independent customer and staff sessions. `/login` accepts the explicitly
-fictional development account `admin@naran.invalid`, password `Fictional-Demo-Only-2026!`.
+fictional development account `admin@tarvio.invalid`, password `Fictional-Demo-Only-2026!`.
 Set `DEMO_PASSWORD` when seeding to use a different local password. No live AI call is made.
 Run the dispatcher and worker in separate terminals in `apps/backend`:
 
 ```bash
-uv run --all-extras python -m supportdesk.workers.dispatcher
-uv run --all-extras celery -A supportdesk.workers.celery_app:app worker -Q ai,ingestion --concurrency=1
+uv run --locked --all-extras python -m supportdesk.workers.dispatcher
+uv run --locked --all-extras celery -A supportdesk.workers.celery_app:app worker -Q ai,ingestion --concurrency=1
 ```
 
 Wait for all five fictional documents to be ready, then start a fresh demo. It clones
@@ -70,7 +77,7 @@ checks that an old supervisor PID belongs to this project, and waits for readine
 
 A 60–90 second walkthrough: start a demo, ask about the trial, open source S1, request a
 human, switch to the operator, claim and reply, refresh the customer, then inspect the
-knowledge page. [UI evidence](docs/evidence/customer-chat.png), [evaluation](docs/evaluation.md)
+knowledge page. [UI evidence](docs/evidence/portfolio/customer-1440.png), [evaluation](docs/evaluation.md)
 and [operations](docs/runbook.md) describe exactly what was checked. The [earlier release manifest](docs/evidence/release.json) records the pre-Tarvio source revision, lockfile hashes, images and verification boundaries; current frontend evidence is linked from the integration note.
 
 ## Verification
@@ -80,12 +87,12 @@ Tests require a dedicated database ending in `_test`; the fixture refuses other 
 ```bash
 docker compose exec -T postgres psql -U supportdesk -c 'CREATE DATABASE supportdesk_test;'
 cd apps/backend
-DATABASE_URL=postgresql+psycopg://supportdesk:local-development-only@127.0.0.1:55432/supportdesk_test uv run alembic upgrade head
-uv run --all-extras pytest -q
-uv run ruff format --check .
-uv run ruff check .
-uv run mypy src
-uv run alembic check
+DATABASE_URL=postgresql+psycopg://supportdesk:local-development-only@127.0.0.1:55432/supportdesk_test uv run --locked alembic upgrade head
+uv run --locked --all-extras pytest -q
+uv run --locked ruff format --check .
+uv run --locked ruff check .
+uv run --locked mypy src
+uv run --locked alembic check
 cd ../..
 pnpm contracts:check
 pnpm lint

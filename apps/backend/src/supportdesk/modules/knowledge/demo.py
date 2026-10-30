@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from supportdesk.cli.seed_knowledge import FIXTURES
 from supportdesk.config import get_settings
+from supportdesk.modules.knowledge.limits import capacity
 from supportdesk.modules.knowledge.models import (
     Artifact,
     Document,
@@ -17,8 +18,9 @@ from supportdesk.modules.workspaces.models import Workspace
 
 
 async def clone_fictional_knowledge(db: AsyncSession, destination: Workspace) -> None:
+    await capacity(db, sum(path.stat().st_size for path in FIXTURES.glob("*.md")))
     source = await db.scalar(
-        select(Workspace).where(Workspace.public_key == "naran-demo")
+        select(Workspace).where(Workspace.public_key == "tarvio-demo")
     )
     if source is None:
         return
@@ -91,4 +93,4 @@ async def clone_fictional_knowledge(db: AsyncSession, destination: Workspace) ->
                     embedding=chunk.embedding,
                 )
             )
-        destination.ai_enabled = True
+        destination.ai_enabled = get_settings().ai_enabled_for_public()

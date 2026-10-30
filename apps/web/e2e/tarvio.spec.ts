@@ -20,7 +20,9 @@ async function fresh(page: Page) {
 async function send(page: Page, body: string) {
   await message(page).fill(body);
   await button(page, "ارسال").click();
-  await expect(page.getByText(body, { exact: true })).toBeVisible();
+  await expect(
+    page.locator(".messages-scroll").getByText(body, { exact: true }),
+  ).toBeVisible();
 }
 async function snapshot(page: Page, id: string) {
   return (
@@ -39,7 +41,7 @@ test("Tarvio real workflows preserve drafts, retries, persisted transitions, kno
   const c1 = (
     await (await page.request.get("/api/v1/customer/conversations")).json()
   )[0].id;
-  await send(page, "How long is the Naran trial? Hand off this turn.");
+  await send(page, "How long is the Tarvio trial? Hand off this turn.");
   await expect(page.getByTestId("ai-draft")).toBeVisible({ timeout: 20000 });
   await button(page, "درخواست کارشناس").click();
   await expect(page.getByTestId("ai-draft")).not.toBeVisible();
@@ -63,7 +65,9 @@ test("Tarvio real workflows preserve drafts, retries, persisted transitions, kno
   await button(staff, "پذیرش گفت‌وگو").click();
   await send(staff, "پاسخ واقعی کارشناس در نمای تارویو");
   await expect(
-    page.getByText("پاسخ واقعی کارشناس در نمای تارویو", { exact: true }),
+    page
+      .locator(".messages-scroll")
+      .getByText("پاسخ واقعی کارشناس در نمای تارویو", { exact: true }),
   ).toBeVisible();
   await staff.getByLabel("اقدام‌های بیشتر").click();
   await button(staff, "بازگشت به صف").click();
@@ -102,7 +106,8 @@ test("Tarvio real workflows preserve drafts, retries, persisted transitions, kno
       } else await route.continue();
     },
   );
-  const retryBody = "How long is the Naran trial? Retry identity verification.";
+  const retryBody =
+    "How long is the Tarvio trial? Retry identity verification.";
   await send(page, retryBody);
   await expect(button(page, "تلاش دوباره")).toBeEnabled();
   await button(page, "تلاش دوباره").click();
@@ -129,7 +134,9 @@ test("Tarvio real workflows preserve drafts, retries, persisted transitions, kno
   await expect(staff).toHaveURL(new RegExp(`/conversations/${c1}$`));
   await staff.reload();
   await expect(
-    staff.getByText("پاسخ واقعی کارشناس در نمای تارویو", { exact: true }),
+    staff
+      .locator(".messages-scroll")
+      .getByText("پاسخ واقعی کارشناس در نمای تارویو", { exact: true }),
   ).toBeVisible();
   await staff
     .getByRole("tab", { name: "در انتظار کارشناس", exact: true })
@@ -315,7 +322,7 @@ test("Tarvio desktop/tablet/mobile panes and accessible source sheets use real d
   test.setTimeout(150000);
   const identity = await bootstrap(page);
   await fresh(page);
-  await send(page, "How long is the Naran trial?");
+  await send(page, "How long is the Tarvio trial?");
   await expect(button(page, "منبع S1")).toBeVisible({ timeout: 30000 });
   const cid = (
     await (await page.request.get("/api/v1/customer/conversations")).json()
@@ -347,7 +354,7 @@ test("Tarvio desktop/tablet/mobile panes and accessible source sheets use real d
     await expect(message(page)).toBeVisible();
     await expect(button(page, "منبع S1")).toBeVisible();
     await page.screenshot({
-      path: `../../docs/evidence/tarvio/customer-${width}.png`,
+      path: `../../docs/evidence/portfolio/customer-${width}.png`,
       fullPage: true,
     });
     await button(page, "منبع S1").click();
@@ -364,7 +371,7 @@ test("Tarvio desktop/tablet/mobile panes and accessible source sheets use real d
           .evaluate((node) => node.contains(document.activeElement)),
       ).toBe(true);
       await page.screenshot({
-        path: `../../docs/evidence/tarvio/source-${width}.png`,
+        path: `../../docs/evidence/portfolio/source-${width}.png`,
         fullPage: true,
       });
       await page.keyboard.press("Escape");
@@ -379,7 +386,7 @@ test("Tarvio desktop/tablet/mobile panes and accessible source sheets use real d
     await page.goto(`/app/${identity.workspace_id}/conversations/${cid}`);
     await expect(message(page)).toBeVisible();
     await page.screenshot({
-      path: `../../docs/evidence/tarvio/operator-${width}.png`,
+      path: `../../docs/evidence/portfolio/operator-${width}.png`,
       fullPage: true,
     });
     expect(
@@ -392,7 +399,7 @@ test("Tarvio desktop/tablet/mobile panes and accessible source sheets use real d
       page.getByText("Fictional fixture: trial", { exact: true }),
     ).toBeVisible();
     await page.screenshot({
-      path: `../../docs/evidence/tarvio/knowledge-${width}.png`,
+      path: `../../docs/evidence/portfolio/knowledge-${width}.png`,
       fullPage: true,
     });
     expect(

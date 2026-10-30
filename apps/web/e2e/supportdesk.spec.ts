@@ -13,7 +13,7 @@ test("isolated customer and operator complete persistent assistant and human cha
     .click();
   await page
     .getByRole("textbox", { name: "پیام", exact: true })
-    .fill("How long is the Naran trial?");
+    .fill("How long is the Tarvio trial?");
   await page.getByRole("button", { name: "ارسال", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "منبع S1", exact: true }),
@@ -25,7 +25,9 @@ test("isolated customer and operator complete persistent assistant and human cha
   await page.getByRole("button", { name: "بستن یادداشت", exact: true }).click();
   await page.reload();
   await expect(
-    page.getByText("How long is the Naran trial?", { exact: true }),
+    page
+      .locator(".messages-scroll")
+      .getByText("How long is the Tarvio trial?", { exact: true }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: "درخواست کارشناس", exact: true })
@@ -55,7 +57,9 @@ test("isolated customer and operator complete persistent assistant and human cha
     .fill("پاسخ کارشناس برای آزمون ماندگاری");
   await staff.getByRole("button", { name: "ارسال", exact: true }).click();
   await expect(
-    page.getByText("پاسخ کارشناس برای آزمون ماندگاری", { exact: true }),
+    page
+      .locator(".messages-scroll")
+      .getByText("پاسخ کارشناس برای آزمون ماندگاری", { exact: true }),
   ).toBeVisible();
   await page.context().setOffline(true);
   await staff
@@ -63,11 +67,15 @@ test("isolated customer and operator complete persistent assistant and human cha
     .fill("پیام هنگام قطع اتصال مشتری");
   await staff.getByRole("button", { name: "ارسال", exact: true }).click();
   await expect(
-    staff.getByText("پیام هنگام قطع اتصال مشتری", { exact: true }),
+    staff
+      .locator(".messages-scroll")
+      .getByText("پیام هنگام قطع اتصال مشتری", { exact: true }),
   ).toBeVisible();
   await page.context().setOffline(false);
   await expect(
-    page.getByText("پیام هنگام قطع اتصال مشتری", { exact: true }),
+    page
+      .locator(".messages-scroll")
+      .getByText("پیام هنگام قطع اتصال مشتری", { exact: true }),
   ).toBeVisible({ timeout: 20000 });
   await staff
     .getByRole("button", { name: "پایان گفت‌وگو", exact: true })
@@ -81,14 +89,16 @@ test("isolated customer and operator complete persistent assistant and human cha
   ).not.toBeVisible();
   await page.reload();
   await expect(
-    page.getByText("پاسخ کارشناس برای آزمون ماندگاری", { exact: true }),
+    page
+      .locator(".messages-scroll")
+      .getByText("پاسخ کارشناس برای آزمون ماندگاری", { exact: true }),
   ).toBeVisible();
   await page.screenshot({
-    path: "../../docs/evidence/customer-chat.png",
+    path: "../../docs/evidence/portfolio/customer-chat.png",
     fullPage: true,
   });
   await staff.screenshot({
-    path: "../../docs/evidence/operator-inbox.png",
+    path: "../../docs/evidence/portfolio/operator-inbox.png",
     fullPage: true,
   });
   await staff.getByRole("link", { name: "دانش‌نامه", exact: true }).click();
@@ -96,7 +106,7 @@ test("isolated customer and operator complete persistent assistant and human cha
     staff.getByText("Fictional fixture: trial", { exact: true }),
   ).toBeVisible();
   await staff.screenshot({
-    path: "../../docs/evidence/knowledge.png",
+    path: "../../docs/evidence/portfolio/knowledge.png",
     fullPage: true,
   });
   const staffIdentity = await (
@@ -117,7 +127,7 @@ test("isolated customer and operator complete persistent assistant and human cha
     .click();
   await customer
     .getByRole("textbox", { name: "پیام", exact: true })
-    .fill("How long is the Naran trial?");
+    .fill("How long is the Tarvio trial?");
   await customer.getByRole("button", { name: "ارسال", exact: true }).click();
   await expect(
     customer.getByRole("button", { name: "منبع S1", exact: true }),
@@ -127,7 +137,9 @@ test("isolated customer and operator complete persistent assistant and human cha
   ).json();
   await customer.reload();
   await expect(
-    customer.getByText("How long is the Naran trial?", { exact: true }),
+    customer
+      .locator(".messages-scroll")
+      .getByText("How long is the Tarvio trial?", { exact: true }),
   ).toBeVisible();
   const after = await (
     await customer.request.get("/api/v1/customer/session")
@@ -141,7 +153,7 @@ test("staff login opens the authorized workspace inbox directly", async ({
   page,
 }) => {
   await page.goto("/login");
-  await page.getByLabel("ایمیل", { exact: true }).fill("admin@naran.invalid");
+  await page.getByLabel("ایمیل", { exact: true }).fill("admin@tarvio.invalid");
   await page
     .getByLabel("رمز عبور", { exact: true })
     .fill("Fictional-Demo-Only-2026!");

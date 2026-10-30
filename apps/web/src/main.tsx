@@ -11,6 +11,7 @@ import {
   useLocation,
   useNavigate,
   useParams,
+  redirect,
 } from "@tanstack/react-router";
 import i18n from "i18next";
 import { initReactI18next, useTranslation } from "react-i18next";
@@ -19,6 +20,7 @@ import { clearPending } from "./lib/pending-sends";
 import { clearDrafts } from "./lib/composer-drafts";
 import { queryClient, resetScope } from "./lib/query-client";
 import { Brand, Button, EmptyState, Icon } from "./components/ui";
+import { DemoIndicator } from "./components/demo-indicator";
 import type { Audience, Session } from "./features/conversation/presentation";
 import fa from "./locales/fa.json";
 import en from "./locales/en.json";
@@ -120,21 +122,22 @@ function Rail({
               <Icon name="book" />
               <span>{t("knowledge")}</span>
             </Link>
-            <Link
-              className={section === "settings" ? "active" : ""}
-              to="/app/$workspaceId/settings"
-              params={{ workspaceId }}
-            >
-              <Icon name="settings" />
-              <span>{t("settings")}</span>
-            </Link>
           </>
         )}
       </nav>
       <div className="rail__bottom">
+        <DemoIndicator
+          fictional={membership.fictional_data ?? false}
+          mode={
+            !session.ai_available
+              ? "disabled"
+              : session.provider_mode === "fake"
+                ? "simulated"
+                : "live"
+          }
+        />
         <span className="demo-label" title={membership.name}>
           {t(membership.role)}
-          <bdi dir="ltr">#{membership.actor_id.slice(0, 6)}</bdi>
         </span>
         {canCustomer && (
           <Link to="/chat/$publicKey" params={{ publicKey: canCustomer }}>
@@ -169,6 +172,16 @@ function CustomerFrame({
         <Link to="/">
           <Brand />
         </Link>
+        <DemoIndicator
+          fictional={session.fictional_data ?? false}
+          mode={
+            session.ai_available === false
+              ? "disabled"
+              : session.provider_mode === "fake"
+                ? "simulated"
+                : "live"
+          }
+        />
         <div className="customer-actions">
           {membership && (
             <Link
@@ -290,11 +303,7 @@ function Workspace() {
       >
         {section !== "inbox" ? (
           membership?.role === "admin" ? (
-            <Knowledge
-              key={membership.workspace_id}
-              session={scoped!}
-              settingsOnly={section === "settings"}
-            />
+            <Knowledge key={membership.workspace_id} session={scoped!} />
           ) : (
             <EmptyState title={t("accessDenied")} text={t("readOnly")} />
           )
@@ -340,6 +349,12 @@ function CustomerEntry() {
         <p role={session.error ? "alert" : "status"}>
           {t(session.error ? "error" : "loading")}
         </p>
+        {session.error && (
+          <>
+            <Button onClick={() => session.refetch()}>{t("retry")}</Button>
+            <Link to="/">{t("back")}</Link>
+          </>
+        )}
       </div>
     );
   return (
@@ -402,7 +417,13 @@ const knowledgeRoute = createRoute({
 const settingsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/app/$workspaceId/settings",
-  component: Workspace,
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: "/app/$workspaceId/knowledge",
+      params: { workspaceId: params.workspaceId },
+      replace: true,
+    });
+  },
 });
 const router = createRouter({
   routeTree: rootRoute.addChildren([

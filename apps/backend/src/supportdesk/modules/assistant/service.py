@@ -6,9 +6,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from supportdesk.config import get_settings
 from supportdesk.infrastructure.database import now
+from supportdesk.modules.assistant.budgets import settle
 from supportdesk.modules.assistant.models import (
-    AiAttempt,
     AiRun,
+    ProviderUsagePeriod,
     UsagePeriod,
     UsageReservation,
 )
@@ -43,31 +44,7 @@ async def supersede(db: AsyncSession, conversation: Conversation) -> None:
         )
     ).all()
     for run in runs:
-        usage = await db.scalar(
-            select(UsagePeriod)
-            .where(
-                UsagePeriod.workspace_id == run.workspace_id,
-                UsagePeriod.period == run.period,
-            )
-            .with_for_update()
-        )
-        reservation = await db.scalar(
-            select(UsageReservation)
-            .where(UsageReservation.ai_run_id == run.id)
-            .with_for_update()
-        )
-        if usage is not None and reservation is not None:
-            attempts = (
-                await db.scalars(select(AiAttempt).where(AiAttempt.run_id == run.id))
-            ).all()
-            charged = sum(
-                (a.input_tokens or 0) + (a.output_tokens or 0)
-                if a.usage_state == "known"
-                else run.per_attempt_tokens
-                for a in attempts
-            )
-            usage.charged_tokens -= reservation.charged_tokens - charged
-            reservation.charged_tokens, reservation.state = charged, "settled"
+        await db.run_sync(settle, run)
         run.status = "superseded"
         run.finished_at = now()
         job = await db.get(Job, run.job_id)
@@ -79,9 +56,26 @@ async def supersede(db: AsyncSession, conversation: Conversation) -> None:
 
 async def admit(db: AsyncSession, conversation: Conversation, message_seq: int) -> bool:
     settings = get_settings()
-    if not await ready(db, conversation.workspace_id):
+    if not settings.ai_enabled_for_public() or not await ready(
+        db, conversation.workspace_id
+    ):
         return False
     period = now().date()
+    # Installation-wide admission is serialized even across different workspaces.
+    from sqlalchemy import text
+
+    await db.execute(text("SELECT pg_advisory_xact_lock(76124912, 1)"))
+    await db.execute(
+        insert(ProviderUsagePeriod)
+        .values(period=period, charged_tokens=0)
+        .on_conflict_do_nothing()
+    )
+    provider_usage = await db.scalar(
+        select(ProviderUsagePeriod)
+        .where(ProviderUsagePeriod.period == period)
+        .with_for_update()
+    )
+    assert provider_usage is not None
     await db.execute(
         insert(UsagePeriod)
         .values(workspace_id=conversation.workspace_id, period=period, charged_tokens=0)
@@ -96,22 +90,27 @@ async def admit(db: AsyncSession, conversation: Conversation, message_seq: int) 
         .with_for_update()
     )
     assert usage is not None
-    allowance = settings.llm_context_limit or 8192
+    allowance = settings.input_allowance() + settings.ai_max_output_tokens
     reserved = allowance * 3
     queued = (
         await db.scalar(
             select(func.count())
             .select_from(AiRun)
             .where(
-                AiRun.workspace_id == conversation.workspace_id,
                 AiRun.status.in_(["queued", "running"]),
             )
         )
         or 0
     )
-    if usage.charged_tokens + reserved > settings.ai_daily_token_limit or queued >= 10:
+    if (
+        usage.charged_tokens + reserved > settings.ai_daily_token_limit
+        or provider_usage.charged_tokens + reserved
+        > settings.ai_provider_daily_token_limit
+        or queued >= settings.ai_max_queued
+    ):
         return False
     usage.charged_tokens += reserved
+    provider_usage.charged_tokens += reserved
     run_id = uuid4()
     job = enqueue(db.sync_session, conversation.workspace_id, "ai", run_id)
     await db.flush()

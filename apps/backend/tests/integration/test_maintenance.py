@@ -7,6 +7,7 @@ from sqlalchemy import select
 
 from supportdesk.cli.purge_expired import main
 from supportdesk.infrastructure.database import Session, now
+from supportdesk.modules.identity.models import LoginSession, StaffUser
 from supportdesk.modules.workspaces.models import Workspace
 
 
@@ -19,6 +20,8 @@ async def test_expired_demo_is_inaccessible_and_can_be_purged(client: AsyncClien
     await asyncio.to_thread(main)
     async with Session() as db:
         assert await db.scalar(select(Workspace.id)) is None
+        assert await db.scalar(select(StaffUser.id)) is None
+        assert await db.scalar(select(LoginSession.id)) is None
 
 
 async def test_retention_preserves_recent_message_and_citation_tombstone(

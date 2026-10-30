@@ -2,17 +2,18 @@
 
 from datetime import timedelta
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, select, text, update
 from sqlalchemy.orm import Session
 
 from supportdesk.config import get_settings
 from supportdesk.infrastructure.database import Base, now
 from supportdesk.infrastructure.worker_database import worker_engine
 from supportdesk.main import create_app
+from supportdesk.modules.assistant.budgets import settle
 from supportdesk.modules.assistant.models import AiRun, MessageCitation, RunSource
 from supportdesk.modules.audit.models import AuditRecord
-from supportdesk.modules.conversations.models import CommandReceipt
-from supportdesk.modules.identity.models import LoginSession
+from supportdesk.modules.conversations.models import CommandReceipt, Conversation
+from supportdesk.modules.identity.models import LoginSession, StaffUser
 from supportdesk.modules.jobs.models import Job, Outbox
 from supportdesk.modules.knowledge.models import (
     Artifact,
@@ -29,10 +30,34 @@ create_app()
 def main() -> None:
     deleted = 0
     with Session(worker_engine()) as db, db.begin():
+        if not db.scalar(text("SELECT pg_try_advisory_xact_lock(76124912, 3)")):
+            return
         expired = db.scalars(
-            select(Workspace.id).where(Workspace.expires_at <= now()).with_for_update()
+            select(Workspace.id)
+            .where(Workspace.expires_at <= now())
+            .order_by(Workspace.id)
+            .limit(50)
+            .with_for_update()
         ).all()
         for workspace_id in expired:
+            # Match finalization's source/conversation/usage lock order before refunding
+            # never-started work. External usage remains charged globally.
+            db.execute(
+                select(Document)
+                .where(Document.workspace_id == workspace_id)
+                .order_by(Document.id)
+                .with_for_update()
+            )
+            db.execute(
+                select(Conversation)
+                .where(Conversation.workspace_id == workspace_id)
+                .order_by(Conversation.id)
+                .with_for_update()
+            )
+            for run in db.scalars(
+                select(AiRun).where(AiRun.workspace_id == workspace_id)
+            ):
+                settle(db, run)
             user_ids = list(
                 db.scalars(
                     select(Actor.user_id).where(
@@ -90,6 +115,18 @@ def main() -> None:
                 table = Base.metadata.tables[name]
                 db.execute(delete(table).where(table.c.workspace_id == workspace_id))
             db.execute(delete(Workspace).where(Workspace.id == workspace_id))
+            for user_id in user_ids:
+                # Only orphaned, randomly provisioned demo identities are disposable.
+                if db.scalar(select(Actor.id).where(Actor.user_id == user_id).limit(1)):
+                    continue
+                user = db.get(StaffUser, user_id)
+                if user and user.normalized_email.endswith("@demo.invalid"):
+                    db.execute(
+                        delete(LoginSession).where(
+                            LoginSession.staff_user_id == user_id
+                        )
+                    )
+                    db.delete(user)
             deleted += 1
         db.execute(delete(RateLimitBucket).where(RateLimitBucket.expires_at < now()))
         stamp = now()

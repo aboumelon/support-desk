@@ -30,7 +30,7 @@ class AiRun(Identified, Timestamped, Base):
     trigger_message_seq: Mapped[int]
     expected_control_epoch: Mapped[int]
     status: Mapped[str] = mapped_column(default="queued")
-    prompt_version: Mapped[str] = mapped_column(default="answer-v1")
+    prompt_version: Mapped[str] = mapped_column(default="answer-v2")
     provider_model: Mapped[str]
     job_id: Mapped[UUID] = mapped_column(ForeignKey("jobs.id"))
     period: Mapped[date] = mapped_column(Date)
@@ -45,6 +45,14 @@ class UsagePeriod(Base):
     workspace_id: Mapped[UUID] = mapped_column(
         ForeignKey("workspaces.id"), primary_key=True
     )
+    period: Mapped[date] = mapped_column(Date, primary_key=True)
+    charged_tokens: Mapped[int] = mapped_column(default=0)
+
+
+class ProviderUsagePeriod(Base):
+    """Shared ledger survives workspace expiry and provider reconfiguration."""
+
+    __tablename__ = "provider_usage_periods"
     period: Mapped[date] = mapped_column(Date, primary_key=True)
     charged_tokens: Mapped[int] = mapped_column(default=0)
 
