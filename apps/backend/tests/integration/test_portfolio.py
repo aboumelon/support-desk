@@ -214,6 +214,26 @@ async def test_search_all_pages_ties_previews_references_and_authorization(clien
         assert (await other.get(url, params={"q": "پرسش"})).status_code == 404
 
 
+async def test_customer_entry_capability_requires_local_seed(client, monkeypatch):
+    from supportdesk.cli.seed_demo import seed
+
+    assert (
+        "customer_entry_key"
+        not in (await client.get("/api/v1/public/capabilities")).json()
+    )
+    await seed()
+    caps = (await client.get("/api/v1/public/capabilities")).json()
+    assert caps["customer_entry_key"] == "tarvio-demo"
+    monkeypatch.setattr(get_settings(), "app_env", "production")
+    assert (
+        "customer_entry_key"
+        not in (await client.get("/api/v1/public/capabilities")).json()
+    )
+    assert (
+        await client.post("/api/v1/public/workspaces/tarvio-demo/visitor-sessions")
+    ).status_code == 404
+
+
 async def test_public_capabilities_and_shared_creation_limit(client, monkeypatch):
     settings = get_settings()
     monkeypatch.setattr(settings, "demo_mode", False)

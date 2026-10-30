@@ -34,6 +34,7 @@ class SessionView(BaseModel):
 class PublicCapabilities(BaseModel):
     demo_available: bool
     ai_mode: Literal["simulated", "live", "disabled"]
+    customer_entry_key: str | None = None
 
 
 class WorkspaceView(BaseModel):

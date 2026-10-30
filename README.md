@@ -60,6 +60,11 @@ workspace with independent customer and staff sessions. `/login` accepts the exp
 fictional development account `admin@tarvio.invalid`, password `Fictional-Demo-Only-2026!`.
 Set `DEMO_PASSWORD` when seeding to use a different local password. The default
 `.env.example` selects the explicit simulated provider; live mode requires backend configuration.
+The home page's **customer entry** opens `/chat/tarvio-demo`, whose conversations reach
+the fixed staff account above. Use a private window for the customer and the normal
+window for staff when testing two separate people. **Start an isolated demo** creates
+its own workspace and paired staff/customer sessions instead. The shared fixture entry
+is shown only when the local backend confirms it exists; production hides that entry.
 Run the dispatcher and worker in separate terminals in `apps/backend`:
 
 ```bash

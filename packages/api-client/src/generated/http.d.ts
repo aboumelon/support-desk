@@ -816,6 +816,8 @@ export interface components {
              * @enum {string}
              */
             ai_mode: "simulated" | "live" | "disabled";
+            /** Customer Entry Key */
+            customer_entry_key?: string | null;
             /** Demo Available */
             demo_available: boolean;
         };

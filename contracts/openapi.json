@@ -557,6 +557,17 @@
             "title": "Ai Mode",
             "type": "string"
           },
+          "customer_entry_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Entry Key"
+          },
           "demo_available": {
             "title": "Demo Available",
             "type": "boolean"

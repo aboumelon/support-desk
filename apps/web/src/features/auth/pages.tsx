@@ -63,6 +63,15 @@ export function Landing() {
                 <Icon name="arrow" />
               </Button>
             )}
+            {capabilities.data?.customer_entry_key && (
+              <Link
+                className="button button--secondary"
+                to="/chat/$publicKey"
+                params={{ publicKey: capabilities.data.customer_entry_key }}
+              >
+                {t("customerLogin")}
+              </Link>
+            )}
             <Link className="button button--secondary" to="/login">
               {t("login")}
             </Link>
@@ -86,6 +95,9 @@ export function Landing() {
             <p className="form-error" role="alert">
               {t("error")}
             </p>
+          )}
+          {capabilities.data?.customer_entry_key && (
+            <small>{t("sharedEntryHint")}</small>
           )}
           {capabilities.data?.demo_available && <small>{t("isolation")}</small>}
         </div>

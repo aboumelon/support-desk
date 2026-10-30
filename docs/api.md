@@ -10,7 +10,10 @@ Use the corresponding bootstrap's CSRF token in `X-CSRF-Token` for mutations and
 exact allowed Origin. Staff login rotates its opaque session; logout revokes it.
 
 `GET /api/v1/public/capabilities` is unauthenticated and exposes only
-`demo_available: boolean` and `ai_mode: simulated | live | disabled`. It never exposes
+`demo_available: boolean` and `ai_mode: simulated | live | disabled`. An optional
+`customer_entry_key` identifies the seeded shared customer entry only when that
+permanent fictional workspace exists outside production. It is omitted in production
+and when the fixture is absent; clients must not invent a fallback entry. It never exposes
 keys, endpoints, model names, budgets or internal flags. Authenticated session and
 responses add `fictional_data` and `ai_available`, and memberships add `fictional_data`; the UI combines these
 with capabilities to describe fictional data independently of provider mode.

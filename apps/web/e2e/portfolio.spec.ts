@@ -18,6 +18,9 @@ test("entry follows public capabilities and recovers without fictional fallback"
     await expect(
       page.getByRole("link", { name: "ورود کارکنان", exact: true }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "ورود مشتری", exact: true }),
+    ).toHaveCount(0);
   }
   await page.unroute("**/api/v1/public/capabilities");
   let failure = true;

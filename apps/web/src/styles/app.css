@@ -1586,12 +1586,15 @@ body,
 }
 :where(.tarvio) .entry-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 9px;
   margin: 30px 0 15px;
 }
 :where(.tarvio) .entry-copy > small {
+  display: block;
   color: var(--muted);
   font-size: 12px;
+  line-height: 1.8;
 }
 :where(.tarvio) .product-visual {
   position: relative;

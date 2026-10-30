@@ -34,13 +34,28 @@ from supportdesk.modules.identity.service import (
 from supportdesk.modules.workspaces.models import Actor, Workspace
 
 router = APIRouter(prefix="/api/v1")
+DB = Annotated[AsyncSession, Depends(get_db)]
 
 
-@router.get("/public/capabilities", response_model=PublicCapabilities)
-async def capabilities() -> PublicCapabilities:
+@router.get(
+    "/public/capabilities",
+    response_model=PublicCapabilities,
+    response_model_exclude_none=True,
+)
+async def capabilities(db: DB) -> PublicCapabilities:
     settings = get_settings()
+    customer_entry_key = None
+    if settings.app_env != "production":
+        customer_entry_key = await db.scalar(
+            select(Workspace.public_key).where(
+                Workspace.public_key == "tarvio-demo",
+                Workspace.fictional_data.is_(True),
+                Workspace.expires_at.is_(None),
+            )
+        )
     return PublicCapabilities(
         demo_available=settings.demo_mode,
+        customer_entry_key=customer_entry_key,
         ai_mode=(
             "disabled"
             if not settings.ai_enabled_for_public()
@@ -49,9 +64,6 @@ async def capabilities() -> PublicCapabilities:
             else "live"
         ),
     )
-
-
-DB = Annotated[AsyncSession, Depends(get_db)]
 
 
 @router.post("/auth/staff/login", response_model=SessionView)

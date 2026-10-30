@@ -1,5 +1,22 @@
 # Tarvio frontend integration
 
+## Shared customer entry (2026-10-30)
+
+Home now places a customer entry beside staff login. The optional backend-confirmed
+`customer_entry_key` links the seeded shared workspace; no key is guessed during
+capability failures or missing fixtures, and production omits it. Persian copy explains
+that customer/staff entry shares the main workspace while each independent demo has
+its own workspace. Buttons wrap on intermediate widths and stack on mobile.
+
+Focused verification passed: 16 PostgreSQL identity/capability/portfolio cases, two
+browser cases (real shared customer-to-fixed-staff messaging, plus capability-disabled
+and retry states), seven frontend unit cases, Ruff, mypy, frontend lint/types/format,
+contract regeneration/drift and production build. The customer-to-staff browser case
+queues the conversation before sending and asserts no AI run, consuming no live quota.
+Landing screenshots were captured at 1440/1366/390/320; desktop/mobile were visually
+inspected. Prior UI edits and all historical evidence were preserved. Current screenshots
+are under `evidence/customer-entry-20261030/`; exact commands are in progress.md.
+
 ## Current portfolio revision (2026-10-30)
 
 The current implementation retains the visual system, local fonts, route boundaries,
