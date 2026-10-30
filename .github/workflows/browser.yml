@@ -19,6 +19,7 @@ jobs:
     env:
       UV_CACHE_DIR: /tmp/supportdesk-uv-cache
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.local/playwright
+      ALLOWED_ORIGINS: '["http://localhost:5173","http://localhost:5184"]'
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
@@ -43,6 +44,15 @@ jobs:
           nohup bash scripts/dev.sh >.local/dev.log 2>&1 &
           uv run --project apps/backend --all-extras python -m supportdesk.cli.wait_demo
           pnpm --filter @supportdesk/web test:e2e
+      - name: Verify production build with the Caddy CSP
+        run: |
+          pnpm build
+          nohup pnpm --filter @supportdesk/web preview:csp >.local/csp-preview.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://localhost:5184/ >/dev/null; then break; fi
+            sleep 1
+          done
+          CSP_BASE_URL=http://localhost:5184 pnpm --filter @supportdesk/web test:e2e e2e/production-csp.spec.ts
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -51,3 +61,4 @@ jobs:
             apps/web/test-results
             docs/evidence/*.png
             .local/dev.log
+            .local/csp-preview.log

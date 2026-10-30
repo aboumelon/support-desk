@@ -2,6 +2,38 @@
 
 Last updated: 2026-10-30 (Asia/Tehran). Authority: [original design](../supportdesk-system-design-v1.md).
 
+## Production Content Security Policy compliance for realtime schema validation (2026-10-30)
+
+- Identified browser runtime exception under Caddy production CSP (`script-src 'self'`)
+  when loading `/workspace`: dynamic `new Ajv().compile(schema)` in `realtime/client.ts`
+  evaluated code via `new Function()`, violating the policy without `'unsafe-eval'`.
+- Replaced runtime Ajv compilation with an ahead-of-time standalone validator script
+  (`apps/web/scripts/generate-realtime-validator.mjs`) emitting `apps/web/src/generated/realtime.validator.mjs`.
+- Integrated validator generation into `scripts/export-contracts.sh` and verification into
+  `scripts/check-contracts.sh`. Added Vitest test suite (`realtime-validator.test.ts`)
+  and Playwright production CSP test (`production-csp.spec.ts`).
+- Passed contract check, unit tests, TypeScript typecheck and production build.
+
+## Freestyle host readiness before public routing (2026-10-30)
+
+- User-provided production startup output completed image builds, schema/role setup,
+  pinned E5 provisioning, five ready fixture hashes and all application roles.
+- Read-only checks against the user's existing `support-desk` VM confirmed state
+  `running`, internal gateway readiness `{status: ok, schema: 0008, redis: ok,
+  provider: compatible_http}` and public capabilities `{demo_available: true,
+  ai_mode: disabled}`. Configuring live credentials alone did not enable production
+  live admission; no model secret was read or printed.
+- The VM had zero TLS routes. The chosen public hostname therefore was not yet mapped
+  to the application, consistent with the user's public 404. No route or public model
+  activation was created by these diagnostics. Trusted-edge/HTTPS/browser host gates
+  remain open until the user publishes and verifies routing.
+- Ordinary CLI reads failed with `UND_ERR_CONNECT_TIMEOUT`; a separate public HTTP
+  probe also timed out locally. A read-only SDK client with the supported custom
+  `fetch` transport and Node environment-proxy support succeeded. An ignored local
+  helper was prepared for the exact VM/domain, defaulting to preview and requiring
+  an explicit `--publish` argument to create a public route. Preview was verified;
+  no cloud mutation was executed. SDK helpers/logs remain under private `.local/`.
+
 ## First-deployment private configuration helper (2026-10-30)
 
 - The user created a Freestyle Ubuntu VM and cloned the repository; startup correctly

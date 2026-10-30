@@ -5,3 +5,4 @@ cd "$(dirname "$0")/.."
 pnpm exec openapi-typescript contracts/openapi.json -o packages/api-client/src/generated/http.d.ts
 pnpm exec json2ts contracts/realtime.schema.json packages/api-client/src/generated/realtime.d.ts
 cp contracts/realtime.schema.json packages/api-client/src/generated/realtime.schema.json
+pnpm --filter @supportdesk/web exec node scripts/generate-realtime-validator.mjs

@@ -1,14 +1,10 @@
-import Ajv from "ajv";
-import schema from "../../../../../packages/api-client/src/generated/realtime.schema.json";
+import validate from "../../generated/realtime.validator.mjs";
 import type {
   DurableEvent,
   AiDelta,
   TypingUpdate,
   PresenceUpdate,
 } from "../../../../../packages/api-client/src/generated/realtime";
-const validate = new Ajv({ strict: false, validateFormats: false }).compile(
-  schema,
-);
 export function connect(
   audience: "customer" | "staff",
   workspace: string,
