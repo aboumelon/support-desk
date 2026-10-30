@@ -67,22 +67,32 @@ volumes. Those volumes were recreated; migrations through 0008 and explicitly fi
 accounts/documents were seeded again. Old conversations were not restored or truncated
 by this verification. Host model/files and earlier isolated backup artifacts were preserved.
 
-From root:
+From root, recreate the private dependencies first:
 
 ```bash
 docker compose -f compose.yaml -f compose.dev.yaml up -d --wait postgres redis
-bash scripts/start-local.sh
-node .local/live-review/verify.mjs
-pnpm contracts:check
 ```
 
-From `apps/backend`:
+From `apps/backend`, initialize a new database and existing model cache:
 
 ```bash
 uv run --locked alembic upgrade head
 uv run --locked --all-extras python -m supportdesk.cli.seed_demo
 HF_HUB_OFFLINE=1 uv run --locked --all-extras python -m supportdesk.cli.provision_embeddings
 uv run --locked --all-extras python -m supportdesk.cli.seed_knowledge
+```
+
+Back at root, start the app and run the browser/contract checks:
+
+```bash
+bash scripts/start-local.sh
+node .local/live-review/verify.mjs
+pnpm contracts:check
+```
+
+From `apps/backend`, run the opt-in live evaluation and automatic checks:
+
+```bash
 uv run --locked --all-extras python -m supportdesk.cli.evaluate_live --allow-live --output ../../.local/live-evaluation-v4-20261030.json
 uv run --locked ruff format --check .
 uv run --locked ruff check .
