@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import Ajv from "ajv";
-import schema from "../../../../contracts/realtime.schema.json";
+import schema from "../../../../packages/api-client/src/generated/realtime.schema.json";
 import validate from "../generated/realtime.validator.mjs";
 
 const reference = new Ajv({ strict: false, validateFormats: false }).compile(
