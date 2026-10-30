@@ -126,16 +126,6 @@ function Rail({
         )}
       </nav>
       <div className="rail__bottom">
-        <DemoIndicator
-          fictional={membership.fictional_data ?? false}
-          mode={
-            !session.ai_available
-              ? "disabled"
-              : session.provider_mode === "fake"
-                ? "simulated"
-                : "live"
-          }
-        />
         <span className="demo-label" title={membership.name}>
           {t(membership.role)}
         </span>
@@ -285,37 +275,51 @@ function Workspace() {
       ? "settings"
       : "inbox";
   return (
-    <main
-      className={`workspace-shell ${section !== "inbox" ? "knowledge-shell" : ""}`}
-    >
+    <main className="workspace-shell">
       <Rail
         session={scoped!}
         customer={customer.data}
         section={section}
         onLogout={() => logout(scoped!)}
       />
-      <React.Suspense
-        fallback={
-          <p className="route-status" role="status">
-            {t("loading")}
-          </p>
-        }
-      >
-        {section !== "inbox" ? (
-          membership?.role === "admin" ? (
-            <Knowledge key={membership.workspace_id} session={scoped!} />
-          ) : (
-            <EmptyState title={t("accessDenied")} text={t("readOnly")} />
-          )
-        ) : (
-          <Desk
-            key={`${membership!.workspace_id}:${membership!.actor_id}`}
-            session={scoped!}
-            audience="staff"
-            initialConversation={params.conversationId}
+      <div className="workspace-content">
+        <header className="workspace-status">
+          <DemoIndicator
+            fictional={membership?.fictional_data ?? false}
+            mode={
+              scoped!.ai_available === false
+                ? "disabled"
+                : scoped!.provider_mode === "fake"
+                  ? "simulated"
+                  : "live"
+            }
           />
-        )}
-      </React.Suspense>
+        </header>
+        <React.Suspense
+          fallback={
+            <p className="route-status" role="status">
+              {t("loading")}
+            </p>
+          }
+        >
+          {section !== "inbox" ? (
+            <div className="workspace-scroll">
+              {membership?.role === "admin" ? (
+                <Knowledge key={membership.workspace_id} session={scoped!} />
+              ) : (
+                <EmptyState title={t("accessDenied")} text={t("readOnly")} />
+              )}
+            </div>
+          ) : (
+            <Desk
+              key={`${membership!.workspace_id}:${membership!.actor_id}`}
+              session={scoped!}
+              audience="staff"
+              initialConversation={params.conversationId}
+            />
+          )}
+        </React.Suspense>
+      </div>
     </main>
   );
 }

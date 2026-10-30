@@ -204,8 +204,11 @@ export function Desk({
                 key={c.id}
                 onClick={() => select(c.id)}
                 aria-label={`${t("conversation")} ${reference(c.id)}`}
+                aria-current={selected === c.id ? "true" : undefined}
               >
-                {selected === c.id && <span className="edge-thread" />}
+                {selected === c.id && (
+                  <span className="edge-thread" aria-hidden="true" />
+                )}
                 <span className="avatar">
                   <Icon name="user" size={18} />
                 </span>

@@ -2,6 +2,193 @@
 
 Last updated: 2026-10-30 (Asia/Tehran). Authority: [original design](../supportdesk-system-design-v1.md).
 
+## Shared customer entry on home (2026-10-30)
+
+- Added Persian customer entry beside staff login, linking `/chat/tarvio-demo`, and
+  concise copy explaining shared customer/staff entry versus an isolated demo.
+- An additive optional public capability exposes the entry only when the known local
+  fixture exists. It is absent for missing fixtures and production, where permanent
+  fictional visitor bootstrap remains denied. Capabilities fail normally without a
+  guessed customer link. No session/workspace permissions or demo isolation changed.
+- Existing fonts/styles and prior uncommitted UI changes were preserved. The entry
+  actions wrap at intermediate widths and stack on mobile; text remains centralized
+  in `apps/web/src/locales/fa.json`.
+- Passed 16 PostgreSQL identity/capability/portfolio cases in 12.93s. New coverage
+  confirms a missing fixture hides the entry and production omits/denies it. Passed
+  Ruff, strict mypy, generated-contract regeneration/drift, frontend formatting/lint,
+  types, seven unit cases and production build. No database migration was needed.
+- Passed two real browser cases in 14.5s: home customer entry → main workspace
+  message → fixed staff login/inbox → claim/reply → customer receipt, plus disabled
+  capabilities/error retry. The shared chat was moved to the human queue before its
+  test message, with `active_run=null`; no live inference was requested. One clearly
+  labeled fictional verification conversation remains in the main workspace.
+- Checked button visibility and no horizontal overflow at 1440/1024/768/390/320.
+  Fresh landing captures at 1440/1366/390/320 are in `evidence/customer-entry-20261030/`;
+  desktop/mobile were visually inspected. No physical-keyboard or performance claim.
+  An initial backend format check required Ruff's formatting; the rerun passed.
+
+Exact root commands:
+
+```bash
+pnpm contracts:generate
+pnpm exec prettier --check apps/web/src/features/auth/pages.tsx apps/web/src/locales/fa.json apps/web/src/styles/app.css apps/web/e2e/customer-entry.spec.ts apps/web/e2e/portfolio.spec.ts
+pnpm lint
+pnpm typecheck
+pnpm --filter @supportdesk/web test
+pnpm contracts:check
+pnpm build
+bash scripts/start-local.sh
+pnpm --filter @supportdesk/web test:e2e --grep 'home customer entry|entry follows public capabilities'
+node .local/customer-entry-review/capture.mjs
+```
+
+From `apps/backend`, using `UV_CACHE_DIR=/tmp/supportdesk-uv-cache`:
+
+```bash
+uv run --locked ruff format --check .
+uv run --locked ruff check .
+uv run --locked mypy src
+uv run --locked --all-extras pytest -q tests/integration/test_identity.py tests/integration/test_portfolio.py
+```
+
+Local services remain ready with schema 0008 and the configured live provider. This
+entry fix does not activate public services or change the earlier deployment gates.
+
+## Authorized local Token Factory verification (2026-10-30)
+
+- [x] Recover local dependencies/schema/fictional fixtures after the user's `docker compose down -v`.
+- [x] Verify authenticated model availability, six live cases, citations and handoff after an actual AI delta.
+- [x] Verify the real browser/source/operator flow, automatic suites and final live runtime; preserve unrelated edits and secrets.
+
+Backend checkpoint: `e609a4c9062e5127c9ed2d92292cdc8aac864e40`.
+Results/failures and exact commands: [live verification](live-provider-verification.md).
+Machine-readable source hashes, answers, accounting and boundaries:
+[live-token-factory-20261030.json](evidence/live-token-factory-20261030.json).
+Existing frontend edits and the two UI progress sections below were preserved and left
+unstaged; the backend/docs checkpoint was committed locally without a remote push.
+
+Authenticated `/models` returned 200 and confirmed `DeepSeek-V4-Flash`. With prompt
+`answer-v4`, the final **6/6** live cases passed: three substantive Persian answers
+with available citations, automatic human queue transfer for missing personal data
+and instruction injection, and manual transfer after the first real provisional delta.
+The interrupted worker attempt finished with a cancelled job and zero canonical AI
+messages. A real browser customer/source/staff claim/reply/refresh flow passed at
+1440/390px, observed six AI deltas and displayed the truthful live indicator. The four
+new screenshots in `evidence/live-20261030/` were visually inspected. Physical mobile
+keyboard behavior and independent human/blind evaluation remain unverified.
+
+One real `PROVIDER_TIMEOUT` recovered on a second bounded attempt. Its unknown first
+cost was conservatively retained. Across the three diagnostic batches and browser
+check, the recreated DB recorded 19 runs / 20 application attempts (18 known, two
+unknown); shared and workspace ledgers both held 27,011 tokens. This is not an exact
+provider billing total. No fake fallback occurred. Live malformed/429 overload was
+not induced; controlled HTTP coverage remains in the automatic suite.
+
+Fresh final verification: **75 backend tests passed in 129.01s** on isolated PostgreSQL
+`supportdesk_test` and Redis 15, including real Redis/Celery recovery. Ruff formatting
+(92 files), lint, strict mypy (64 source files), `alembic check` and generated-contract
+drift passed. New regressions cover stale prompt rejection before any inference and
+rejecting citation-only answers. Pytest explicitly forces fake inference; configuration
+unit tests ignore private dotenv/exported LLM inputs, preventing accidental live calls.
+
+Corrected intermediate results: the initial live `answer-v2` output only advised
+contacting support for missing data; `answer-v3` incorrectly handed off a follow-up and
+produced a citation-only webhook response. Those runs are not accepted as passing.
+The prompt and substantive-answer gate were corrected before the final six-case pass.
+An initial stale-version test expected a more specific code than the existing task
+wrapper exposes; it now checks the generic failure and zero attempts. An intermediate
+full suite had 73 passes/two configuration failures because actual `.env` values filled
+deliberately missing settings; after isolation the complete 75-case rerun passed.
+An auxiliary root-directory Alembic invocation lacked the relative migration directory;
+the correct backend-directory check passed.
+
+Recovery: the first attempt hit `DEMO_CAPACITY_REACHED` at 50 active demos before
+inference. The user subsequently removed the development DB/Redis volumes; they were
+recreated and migrated through 0008, with fictional accounts and five ready documents.
+Old conversations were not restored. Host files/model cache and earlier isolated backup
+artifacts were preserved. No live-data truncation or resource-limit override was used;
+pytest recreated/migrated its own separate test database.
+
+Exact root recovery/browser/contract commands:
+
+```bash
+docker compose -f compose.yaml -f compose.dev.yaml up -d --wait postgres redis
+# Initialize schema/model/fixtures below before restarting a brand-new database.
+bash scripts/start-local.sh
+node .local/live-review/verify.mjs
+pnpm contracts:check
+```
+
+Exact backend commands, with `UV_CACHE_DIR=/tmp/supportdesk-uv-cache`:
+
+```bash
+uv run --locked alembic upgrade head
+uv run --locked --all-extras python -m supportdesk.cli.seed_demo
+HF_HUB_OFFLINE=1 uv run --locked --all-extras python -m supportdesk.cli.provision_embeddings
+uv run --locked --all-extras python -m supportdesk.cli.seed_knowledge
+uv run --locked --all-extras python -m supportdesk.cli.evaluate_live --allow-live --output ../../.local/live-evaluation-v4-20261030.json
+uv run --locked ruff format --check .
+uv run --locked ruff check .
+uv run --locked mypy src
+uv run --locked alembic check
+uv run --locked --all-extras pytest -q
+```
+
+The existing `.env` is private (0600), ignored and absent from source/evidence; its key
+was never printed. Ordinary local services remain running with `compatible_http`,
+`ai_mode=live`, schema 0008 and Redis ok at `http://localhost:5173`. For broad browser
+regressions explicitly start `LLM_PROVIDER=fake FAKE_SCENARIO=slow bash scripts/start-local.sh`,
+then restart normally to restore the user's configured live provider. Public-provider
+permission, Freestyle deployment/HTTPS/edge policy and encrypted off-host recovery stay
+open; current production images were not rebuilt and no new performance target is claimed.
+
+## Workspace scrolling and navigation refinement (2026-10-30)
+
+- Knowledge now scrolls in a full-width workspace container rather than inside the
+  centered content column. Its scrollbar is aligned with the viewport's left edge;
+  the document content retains its normal padding and maximum width.
+- Desktop navigation widths are 92/84/80px across the existing breakpoints, increased
+  by 16px. The mobile bottom navigation keeps its existing height.
+- Moved the single truthful fictional-data/provider indicator out of navigation into
+  a compact workspace header. Explicit grid rows keep the header, inbox and Knowledge
+  scroller separate, including route-loading and mobile states. Customer entry/header
+  indicators retain their existing behavior.
+- Passed `pnpm exec prettier --check apps/web/src/main.tsx apps/web/src/styles/app.css`,
+  `pnpm lint`, `pnpm typecheck` and `pnpm build`. The real browser review
+  (`node .local/ui-chrome-review/verify.mjs`) passed at 1440/1365/1024/768/390/320px:
+  scrollbar container left coordinate 0; all document content reachable at the bottom;
+  no horizontal page/content/navigation overflow; exactly one status outside the rail;
+  upload dialog/Escape; Knowledge/inbox navigation; and visible composer above the mobile
+  rail, including a reduced 390x520 viewport. Screenshots were visually inspected;
+  local results/scripts/private session state remain ignored under `.local/ui-chrome-review/`.
+- Intermediate auxiliary checks used a mismatched inbox label and assumed the mobile
+  list was always open, then checked visibility before route data was ready. Corrected
+  selectors, persisted-selection handling and route/data waits passed. The initial flex
+  layout also allowed mobile header overlap; explicit grid placement corrected it and
+  fresh geometry checks confirmed the reading pane starts below the status header.
+  Backend/contracts/provider configuration are unchanged; no live/host/performance or
+  physical-keyboard verification is inferred from these UI checks.
+
+## Conversation list visual correction (2026-10-30)
+
+- Replaced the clipped bracket beside the selected conversation with a solid rounded
+  indicator inside a padded row. Keyboard focus stays inset rather than being clipped
+  across neighboring rows; the active conversation also exposes `aria-current`.
+- Added the divider on the actual RTL boundary between list and transcript, with a
+  distinct list background. Mobile's single-pane list omits the unnecessary divider.
+  The list keeps a thin, neutral scrollbar.
+- `pnpm exec prettier --check apps/web/src/features/conversation/desk.tsx apps/web/src/styles/app.css`,
+  `pnpm lint`, `pnpm typecheck` and `pnpm build` passed. The real local browser review
+  at 1440/1024/768/390px passed: two persisted conversations, no horizontal overflow,
+  inset keyboard focus, desktop divider, mobile list/back navigation and operator
+  selection. Screenshots and the local review script/result are ignored under
+  `.local/ui-panel-review/` (`node .local/ui-panel-review/verify.mjs`). Desktop/mobile
+  renders were visually inspected. No backend/contracts changed and no new load or
+  physical-keyboard claim is made.
+- The first auxiliary review stopped at mobile because it selected "Back" rather
+  than the actual "Back to list" accessible name. The corrected review passed.
+  Earlier portfolio evidence below remains tied to its original revision.
+
 ## Portfolio release preparation (2026-10-30)
 
 - [x] Authorized server-side search/cursors, persisted titles/previews, focused navigation and accurate public capabilities/demo copy.

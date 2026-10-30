@@ -220,8 +220,8 @@ body,
   min-height: 0;
   display: grid;
   grid-template-rows: auto auto auto minmax(0, 1fr);
-  background: #fafbfc;
-  border-inline-start: 1px solid var(--divider);
+  background: #f6f7fa;
+  border-inline-end: 1px solid #cbd2de;
 }
 :where(.tarvio) .index-header {
   display: flex;
@@ -293,18 +293,22 @@ body,
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+  padding: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #c3cad6 transparent;
 }
 :where(.tarvio) .conversation-row {
   position: relative;
-  border: 0;
-  border-bottom: 1px solid var(--divider);
+  border: 1px solid transparent;
+  border-radius: 8px;
   background: transparent;
   width: 100%;
   display: grid;
   grid-template-columns: 38px minmax(0, 1fr);
   gap: 10px;
   text-align: right;
-  padding: 15px 16px;
+  padding: 14px 12px;
+  margin-bottom: 4px;
   color: var(--ink);
 }
 :where(.tarvio) .conversation-row:hover {
@@ -312,15 +316,19 @@ body,
 }
 :where(.tarvio) .conversation-row.selected {
   background: var(--selected);
+  border-color: #d4dafe;
+}
+:where(.tarvio) .conversation-row:focus-visible {
+  outline: 2px solid var(--cobalt);
+  outline-offset: -2px;
 }
 :where(.tarvio) .edge-thread {
   position: absolute;
   inset-inline-start: 0;
-  top: 18px;
-  width: 4px;
-  height: 48px;
-  border: 1.5px solid var(--cobalt);
-  border-inline-start: 0;
+  inset-block: 14px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--cobalt);
 }
 :where(.tarvio) .avatar {
   width: 38px;
@@ -2167,11 +2175,52 @@ body,
 }
 .tarvio .workspace-shell {
   display: grid;
-  grid-template-columns: 76px minmax(0, 1fr);
+  grid-template-columns: 92px minmax(0, 1fr);
   width: 100%;
   height: 100dvh;
   overflow: hidden;
   background: var(--canvas);
+}
+.tarvio .workspace-content {
+  grid-column: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: clip;
+}
+.tarvio .workspace-status {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 34px;
+  padding: 6px 24px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--divider);
+}
+.tarvio .workspace-scroll {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #c3cad6 transparent;
+}
+.tarvio .workspace-content > .operator-shell {
+  grid-column: 1;
+  grid-row: 2;
+  height: 100%;
+}
+.tarvio .workspace-content > .route-status {
+  grid-column: 1;
+  grid-row: 2;
+  min-height: 0;
 }
 .tarvio .operator-shell {
   grid-column: 2;
@@ -2414,8 +2463,9 @@ body,
   font-size: 15px;
 }
 .tarvio .knowledge-page {
-  overflow: auto;
+  overflow: visible;
   max-width: 1250px;
+  min-height: 100%;
 }
 .tarvio .doc-row {
   grid-template-columns:
@@ -2544,7 +2594,7 @@ body,
 }
 @media (max-width: 1280px) {
   .tarvio .workspace-shell {
-    grid-template-columns: 68px minmax(0, 1fr);
+    grid-template-columns: 84px minmax(0, 1fr);
   }
   .tarvio .operator-shell {
     grid-template-columns: 286px minmax(0, 1fr);
@@ -2564,7 +2614,7 @@ body,
 }
 @media (max-width: 900px) {
   .tarvio .workspace-shell {
-    grid-template-columns: 64px minmax(0, 1fr);
+    grid-template-columns: 80px minmax(0, 1fr);
   }
   .tarvio .conversation-header {
     gap: 8px;
@@ -2599,6 +2649,9 @@ body,
     height: 100dvh;
     padding-bottom: calc(64px + env(safe-area-inset-bottom));
   }
+  .tarvio .workspace-status {
+    padding-inline: 14px;
+  }
   .tarvio .operator-shell,
   .tarvio .operator-shell:has(> .source-inspector) {
     display: block;
@@ -2608,6 +2661,9 @@ body,
   .tarvio .conversation-index,
   .tarvio .reading-pane {
     height: 100%;
+  }
+  .tarvio .conversation-index {
+    border-inline-end: 0;
   }
   .tarvio .rail {
     height: calc(64px + env(safe-area-inset-bottom));
@@ -2751,15 +2807,6 @@ body,
   content: "·";
   margin-inline-end: 6px;
 }
-.tarvio .rail .demo-indicator {
-  flex-direction: column;
-  gap: 0;
-  text-align: center;
-  color: #cbd1da;
-}
-.tarvio .rail .demo-indicator > span + span::before {
-  content: none;
-}
 .tarvio .row-top strong {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2793,11 +2840,6 @@ body,
   min-height: 44px;
 }
 @media (max-width: 760px) {
-  .tarvio .rail .demo-indicator {
-    flex-shrink: 0;
-    width: 62px;
-    justify-content: center;
-  }
   .tarvio .customer-header {
     display: grid;
     grid-template-columns: 1fr auto;
