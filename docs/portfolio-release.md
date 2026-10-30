@@ -1,9 +1,13 @@
 # Tarvio portfolio demo preparation
 
-Status: implemented and verified locally; live-provider and deployment-host gates remain open.
-No Freestyle resource, public endpoint, remote push, paid service or live provider was activated.
-Source/images: `aadc8f3661145e50613959bf5901c6fd5ba6494f`.
-Machine-readable hashes and image identities: [portfolio evidence](evidence/portfolio.json).
+Status: implemented locally; a small authorized Token Factory evaluation is verified.
+Deployment-host and public-provider activation gates remain open. No Freestyle resource,
+public endpoint, remote push or paid service was activated.
+Earlier container source/images: `aadc8f3661145e50613959bf5901c6fd5ba6494f`.
+Those images predate the live prompt corrections; rebuild from the intended current
+source before rollout. Historical identities: [portfolio evidence](evidence/portfolio.json).
+Current live results: [verification note](live-provider-verification.md) and
+[machine-readable evidence](evidence/live-token-factory-20261030.json).
 
 ## Focused product changes
 
@@ -22,15 +26,17 @@ Official sources checked on 2026-10-30:
 - [Chat Completions](https://amd-aim.github.io/radeon-cloud-docs/api/chat-completions/), [model catalog](https://amd-aim.github.io/radeon-cloud-docs/models/overview/), [rate limits](https://amd-aim.github.io/radeon-cloud-docs/api/rate-limits/), [terms](https://amd-aim.github.io/radeon-cloud-docs/api/terms/).
 
 The documented compatible base is `https://developer.amd.com.cn/radeon/api/v1`.
-The catalog currently lists text models including `DeepSeek-V4-Flash` and `Qwen3.8-27B`;
-verify the authenticated `/models` result before selecting one. No authenticated model
-listing or successful live request was performed here because backend credentials/model
-configuration were absent.
+The catalog currently lists text models including `DeepSeek-V4-Flash` and `Qwen3.8-27B`.
+On 2026-10-30 the authorized authenticated `/models` check returned 200 and confirmed
+`DeepSeek-V4-Flash`. The final six-case local evaluation passed with that model, plus
+a real browser customer/source/operator flow. Credentials remain backend-only and ignored.
 
 The adapter uses one first-position `system` message, delimited JSON references treated
-as untrusted data, and bounded whole conversation turns. New runs record `answer-v2`;
+as untrusted data, and bounded whole conversation turns. New runs record `answer-v4`;
 queued runs with a different prompt version cannot silently execute the changed prompt.
 Local E5/pgvector retrieval is unchanged. There is no fake fallback after a live error.
+The prompt resolves follow-up questions using history and requests the exact no-answer
+marker for insufficient evidence. Citation-only output is rejected before final publication.
 
 SSE parsing validates framing, usage types, completion reason and `[DONE]`; malformed,
 truncated and unsupported tool output cannot become final answers. Usage-only frames do
@@ -58,11 +64,13 @@ uv run --locked --all-extras python -m supportdesk.cli.evaluate_live --allow-liv
 ```
 
 The opt-in evaluator is limited to the local development origin and at most six customer
-turns: Persian supported questions, follow-up, unsupported/injection questions and an
-attempted handoff while running. A completed model that finishes before handoff is recorded
-honestly. Human claim-support review is still required; structural citations do not prove
-faithfulness. Provider failure behavior is checked by controlled HTTP tests, not by trying
-to overload a live service.
+turns: Persian supported questions, follow-up, unsupported/injection questions and handoff
+after the first actual WebSocket AI delta. It retrieves authorized citations, separates
+new answers from previous turns and exits unsuccessfully when a case fails. A completed
+model that finishes before handoff cannot count as a passed streaming handoff. Human
+claim-support review is still required; structural citations do not prove faithfulness.
+One real timeout recovered through bounded retry; its unknown cost stayed charged.
+Malformed/429/deadline coverage remains controlled HTTP testing, without live overload.
 
 ## Shared resource bounds
 

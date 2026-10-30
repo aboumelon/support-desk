@@ -14,7 +14,11 @@ from supportdesk.infrastructure.worker_database import worker_engine
 from supportdesk.modules.assistant.embeddings.e5 import encode
 from supportdesk.modules.assistant.finalization import emit, finish
 from supportdesk.modules.assistant.models import AiAttempt, AiRun, RunSource
-from supportdesk.modules.assistant.prompts import REFERENCE_MARKER, build_messages
+from supportdesk.modules.assistant.prompts import (
+    PROMPT_VERSION,
+    REFERENCE_MARKER,
+    build_messages,
+)
 from supportdesk.modules.assistant.providers.base import ProviderFailure
 from supportdesk.modules.assistant.providers.compatible_http import (
     CompatibleHttpProvider,
@@ -56,7 +60,7 @@ def generate(job_id: UUID, token: UUID) -> None:
         )
         if run.provider_model != configured:
             raise ProviderFailure("PROVIDER_CONFIGURATION_CHANGED")
-        if run.prompt_version != "answer-v2":
+        if run.prompt_version != PROMPT_VERSION:
             raise ProviderFailure("PROMPT_CONFIGURATION_CHANGED")
         query = trigger.body
     vector = encode([query], "query")[0]

@@ -3,6 +3,9 @@ from pathlib import Path
 
 # Test commands must opt into a dedicated database. Never truncate the demo database.
 os.environ["APP_ENV"] = "test"
+# Automated suites never inherit live inference from a developer's private .env.
+# Live requests are an explicit, separate evaluate_live operation.
+os.environ["LLM_PROVIDER"] = "fake"
 os.environ["STORAGE_ROOT"] = str(
     Path(__file__).resolve().parents[3] / ".local" / "test-files"
 )

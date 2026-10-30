@@ -7,7 +7,9 @@ from sqlalchemy import func, select
 
 from supportdesk.config import get_settings
 from supportdesk.infrastructure.database import Session
-from supportdesk.modules.assistant.models import AiRun, UsageReservation
+from supportdesk.modules.assistant.models import AiAttempt, AiRun, UsageReservation
+from supportdesk.modules.assistant.providers.base import Delta
+from supportdesk.modules.assistant.providers.fake import FakeProvider
 from supportdesk.modules.jobs.models import Job
 from supportdesk.modules.messaging.models import Message
 from supportdesk.modules.workspaces.models import Workspace
@@ -73,6 +75,33 @@ async def test_fake_answer_citation_and_accounting(client: AsyncClient):
         reservation = await db.scalar(select(UsageReservation))
         assert reservation.state == "settled"
         assert reservation.charged_tokens < reservation.reserved_tokens
+
+
+async def test_stale_prompt_version_hands_off_without_inference(client: AsyncClient):
+    prefix, _, _, jid = await prepare(client)
+    async with Session.begin() as db:
+        run = await db.scalar(select(AiRun))
+        run.prompt_version = "answer-v2"
+    await asyncio.to_thread(execute_job, jid)
+    snapshot = (await client.get(prefix + "/snapshot")).json()
+    assert snapshot["conversation"]["controller"] == "queue"
+    assert len(snapshot["messages"]) == 1
+    assert snapshot["active_run"]["error_code"] == "ASSISTANT_FAILED"
+    async with Session() as db:
+        assert await db.scalar(select(func.count()).select_from(AiAttempt)) == 0
+
+
+async def test_citation_only_answer_is_not_published(client: AsyncClient, monkeypatch):
+    def citation_only(*args):
+        yield Delta(text="[S1]", input_tokens=10, output_tokens=2)
+
+    monkeypatch.setattr(FakeProvider, "stream", citation_only)
+    prefix, _, _, jid = await prepare(client)
+    await asyncio.to_thread(execute_job, jid)
+    snapshot = (await client.get(prefix + "/snapshot")).json()
+    assert snapshot["conversation"]["controller"] == "queue"
+    assert len(snapshot["messages"]) == 1
+    assert snapshot["active_run"]["error_code"] == "INVALID_CITATION"
 
 
 @pytest.mark.parametrize("race", ["handoff", "new_turn", "withdraw"])

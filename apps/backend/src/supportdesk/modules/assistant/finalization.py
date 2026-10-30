@@ -137,6 +137,7 @@ def finish(
         reason = "KNOWLEDGE_CHANGED"
     if answer and (
         not labels
+        or not any(char.isalnum() for char in re.sub(r"\[S\d+\]", "", answer))
         or not labels.issubset({s.source_label for s in sources})
         or "NO_ANSWER" in answer
     ):

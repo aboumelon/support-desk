@@ -15,8 +15,14 @@ reports below are historical and have not been overwritten.
 The provider adapter's controlled HTTP tests cover final/omitted/early usage, malformed
 and truncated SSE, dropped streams, deadlines, HTTP errors and bounded Retry-After.
 Global PostgreSQL budget/concurrency tests span multiple workspaces. An opt-in live
-workflow is prepared in `supportdesk.cli.evaluate_live --allow-live`; the actual guard
-refused missing live configuration. No live request succeeded or was attempted.
+workflow is available in `supportdesk.cli.evaluate_live --allow-live`. The earlier
+missing-configuration guard remains historical; after credentials were supplied, the
+2026-10-30 [live verification](live-provider-verification.md) passed six cases using
+DeepSeek-V4-Flash and prompt `answer-v4`, plus a real browser/source/operator flow.
+Three grounded answers, two automatic handoffs and one handoff after a real provisional
+delta are expected outcomes, rather than six canonical assistant messages. Initial
+prompt failures and corrections are recorded; this is neither blind nor independently
+human-rated evidence. No general model-quality or host-performance target is claimed.
 
 `evidence/rag-baseline-v1.json` preserves the first measurement: recall@5 1.0,
 correct handoff 0.625, zero source-isolation failures, structurally valid source labels.

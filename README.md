@@ -12,7 +12,8 @@ Internal service/package names remain SupportDesk.
 The portfolio revision adds authorized server-side inbox search, persisted message
 titles/previews, one Knowledge activation control, truthful public capabilities and
 installation-wide resource limits. The complete Compose package was checked locally;
-live generation and Freestyle deployment remain unverified. See the
+a small authorized [live Token Factory evaluation](docs/live-provider-verification.md)
+now passes. Freestyle deployment and public-provider activation remain unverified. See the
 [portfolio handoff](docs/portfolio-release.md) for official provider terms, production
 startup, trusted proxies, backup/restore, rollback and missing host inputs.
 
@@ -57,7 +58,8 @@ pnpm --filter @supportdesk/web dev
 Open http://localhost:5173 (use this exact origin). `/demo` creates an isolated expiring
 workspace with independent customer and staff sessions. `/login` accepts the explicitly
 fictional development account `admin@tarvio.invalid`, password `Fictional-Demo-Only-2026!`.
-Set `DEMO_PASSWORD` when seeding to use a different local password. No live AI call is made.
+Set `DEMO_PASSWORD` when seeding to use a different local password. The default
+`.env.example` selects the explicit simulated provider; live mode requires backend configuration.
 Run the dispatcher and worker in separate terminals in `apps/backend`:
 
 ```bash
@@ -99,7 +101,9 @@ pnpm lint
 pnpm typecheck
 pnpm --filter @supportdesk/web test
 pnpm build
+LLM_PROVIDER=fake FAKE_SCENARIO=slow bash scripts/start-local.sh
 pnpm --filter @supportdesk/web test:e2e
+bash scripts/start-local.sh
 ```
 
 Test database creation is a one-time command. Dependencies and fixtures remain on the
@@ -107,10 +111,16 @@ local machine. `docker compose -f compose.yaml -f compose.dev.yaml stop` stops s
 without deleting their data. Production deployment is not yet verified; do not expose
 the development database owner or fixture credentials publicly.
 
+Pytest forces the simulated provider and configuration unit tests ignore private LLM
+settings. The browser suite also needs the explicit fake startup above; the final
+restart restores the provider selected by `.env`. Live evaluation uses only the opt-in
+CLI described in the live verification note, rather than the broad deterministic suite.
+
 
 The implementation is a local working demo. Required release gates still under verification
 are tracked in `docs/progress.md`; the presence of deployment files does not imply a completed
-production release. Live-provider checks and independent human faithfulness ratings are unverified.
+production release. Live checks cover the recorded local cases; independent human
+faithfulness ratings, public-provider permission and deployment-host checks remain open.
 
 
 Recorded demo: [customer flow video](docs/evidence/demo.webm). The direct customer page is

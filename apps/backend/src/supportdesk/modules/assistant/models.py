@@ -11,6 +11,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Mapped, mapped_column
 
 from supportdesk.infrastructure.database import Base, Identified, Timestamped
+from supportdesk.modules.assistant.prompts import PROMPT_VERSION
 
 
 class AiRun(Identified, Timestamped, Base):
@@ -30,7 +31,7 @@ class AiRun(Identified, Timestamped, Base):
     trigger_message_seq: Mapped[int]
     expected_control_epoch: Mapped[int]
     status: Mapped[str] = mapped_column(default="queued")
-    prompt_version: Mapped[str] = mapped_column(default="answer-v2")
+    prompt_version: Mapped[str] = mapped_column(default=PROMPT_VERSION)
     provider_model: Mapped[str]
     job_id: Mapped[UUID] = mapped_column(ForeignKey("jobs.id"))
     period: Mapped[date] = mapped_column(Date)
