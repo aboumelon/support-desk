@@ -173,9 +173,27 @@ test("Tarvio real workflows preserve drafts, retries, persisted transitions, kno
   );
   const retryBody =
     "How long is the Tarvio trial? Retry identity verification.";
-  await send(page, retryBody);
-  await expect(button(page, "تلاش دوباره")).toBeEnabled();
-  await button(page, "تلاش دوباره").click();
+  // A committed first send may otherwise be acknowledged by a realtime-triggered
+  // snapshot before the manual retry is clicked. Hold that *real* reconciliation
+  // response until a second POST is observed; no server result is fabricated.
+  let releaseReconciliation!: () => void;
+  const reconciliation = new Promise<void>((resolve) => {
+    releaseReconciliation = resolve;
+  });
+  const retrySnapshot = `**/api/v1/customer/conversations/${c2}/snapshot`;
+  await page.route(retrySnapshot, async (route) => {
+    await reconciliation;
+    await route.continue();
+  });
+  try {
+    await send(page, retryBody);
+    await expect(button(page, "تلاش دوباره")).toBeEnabled();
+    await button(page, "تلاش دوباره").click();
+    await expect.poll(() => attempts.length).toBeGreaterThanOrEqual(2);
+  } finally {
+    releaseReconciliation();
+  }
+  await page.unroute(retrySnapshot);
   await expect(button(page, "تلاش دوباره")).not.toBeVisible();
   expect(attempts.length).toBeGreaterThanOrEqual(2);
   expect(new Set(attempts).size).toBe(1);
