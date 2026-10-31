@@ -27,7 +27,10 @@ unarmed requests use the ordinary fake stream unchanged. The test:
 
 1. Waits for websocket connection and a real Redis draft subscriber.
 2. Sends the marked question through the real customer composer/message endpoint.
-3. Waits for `paused`, written only after the worker consumes and publishes the first
+3. Waits for the provider's `ready` signal, a real websocket run-change frame for this
+   conversation, and the UI's snapshot-derived generating state. It then signals `start`:
+   the client now has the active-run identity before the first ephemeral delta is emitted.
+   Waits for `paused`, written only after the worker consumes and publishes the first
    normal provider delta and requests another. No subsequent chunk/final message can
    complete while this barrier is held.
 4. Requires a visible provisional draft and snapshot status **running**.
@@ -125,7 +128,7 @@ The existing conditional skip is only the production-CSP case when targeting the
 server; the same test then ran and passed separately against the built frontend and
 production CSP policy (not a claim of deployed Caddy/HTTPS verification).
 Foundation checks also passed for this revision. Local checks:25 web unit tests,
-typecheck, lint, three standard-library barrier tests and Ruff checks passed. The earlier
+typecheck, lint, standard-library barrier tests and Ruff checks passed. The earlier
 runtime build was unchanged; CI rebuilt and checked the actual production frontend.
 
 Earlier implementation attempts are not hidden: at56f615e, quota-scheduled admission
@@ -161,3 +164,11 @@ is the retry reconciliation gate armed. UI timeouts, expected statuses, idempote
 persistence assertions remain unchanged. This observed red run is retained, not retried
 away or counted as green. Fresh-head full-suite/CSP results are required before clearing
 this regression and are recorded in PR#1's final verification comment.
+
+
+The final barrier additionally has a start handshake: without it a very fast first
+`ai.delta` could arrive before the frontend snapshot contains its run ID and be correctly
+ignored. The test now waits for provider-ready, a real websocket run-change frame proving
+conversation subscription, and snapshot-derived generating UI before allowing that first
+delta. A fourth isolated unit test proves no delta is emitted before start. Both gates
+have watchdog failure signals, and both are released in test cleanup.

@@ -19,15 +19,21 @@ def require_test_worker(environment: str, provider: str, directory: Path) -> Non
 def controlled_stream(
     stream: Iterator[object], directory: Path, token: str, timeout: float = 45
 ) -> Iterator[object]:
+    def wait_for(signal: str) -> None:
+        deadline = time.monotonic() + timeout
+        while not (directory / f"{token}.{signal}").exists():
+            if time.monotonic() >= deadline:
+                (directory / f"{token}.timed-out").touch()
+                raise TimeoutError("E2E cancellation barrier was not released")
+            threading.Event().wait(0.01)  # Bounded IPC polling, not provider latency.
+
+    # Prime the client snapshot/subscription before emitting the first ephemeral delta.
+    (directory / f"{token}.ready").touch()
+    wait_for("start")
     # The caller consumes/publishes this first delta before requesting the next one.
     yield next(stream)
     (directory / f"{token}.paused").touch()
-    deadline = time.monotonic() + timeout
-    while not (directory / f"{token}.release").exists():
-        if time.monotonic() >= deadline:
-            (directory / f"{token}.timed-out").touch()
-            raise TimeoutError("E2E cancellation barrier was not released")
-        threading.Event().wait(0.01)  # IPC polling, not simulated provider latency.
+    wait_for("release")
     yield from stream
 
 

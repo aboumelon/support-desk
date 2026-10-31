@@ -68,6 +68,14 @@ test("Tarvio real workflows preserve drafts, retries, persisted transitions, kno
   browser,
 }) => {
   test.setTimeout(180000);
+  const runSubscriptions = new Set<string>();
+  page.on("websocket", (socket) =>
+    socket.on("framereceived", ({ payload }) => {
+      const frame = JSON.parse(String(payload));
+      if (frame.type === "ai.run_changed")
+        runSubscriptions.add(frame.conversation_id);
+    }),
+  );
   const identity = await bootstrap(page),
     wid = identity.workspace_id;
   await fresh(page);
@@ -107,6 +115,16 @@ test("Tarvio real workflows preserve drafts, retries, persisted transitions, kno
       `How long is the Tarvio trial? Hand off this turn. [e2e-cancel:${token}]`,
     );
     await expect
+      .poll(() => existsSync(signal("ready")), { timeout: 20000 })
+      .toBe(true);
+    await expect
+      .poll(() => runSubscriptions.has(c1), { timeout: 20000 })
+      .toBe(true);
+    await expect(
+      page.locator(".responsibility-strip.state-generating"),
+    ).toBeVisible();
+    writeFileSync(signal("start"), "");
+    await expect
       .poll(() => existsSync(signal("paused")), { timeout: 20000 })
       .toBe(true);
     await expect(page.getByTestId("ai-draft")).toBeVisible({ timeout: 20000 });
@@ -117,6 +135,7 @@ test("Tarvio real workflows preserve drafts, retries, persisted transitions, kno
       .poll(async () => (await snapshot(page, c1)).active_run?.status)
       .toBe("superseded");
   } finally {
+    writeFileSync(signal("start"), "");
     writeFileSync(signal("release"), "");
   }
   await expect

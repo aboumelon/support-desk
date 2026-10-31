@@ -17,6 +17,7 @@ class BrowserBarrierTest(unittest.TestCase):
     def test_first_delta_is_consumed_before_pause_and_release_is_required(self):
         with TemporaryDirectory() as tmp:
             directory = Path(tmp)
+            (directory / "test.start").touch()
             stream = controlled_stream(iter(["first", "second"]), directory, "test")
             self.assertEqual(next(stream), "first")
             self.assertFalse((directory / "test.paused").exists())
@@ -40,8 +41,29 @@ class BrowserBarrierTest(unittest.TestCase):
 
     def test_missing_release_fails_closed(self):
         with TemporaryDirectory() as tmp:
+            (Path(tmp) / "test.start").touch()
             stream = controlled_stream(iter([1, 2]), Path(tmp), "test", timeout=0)
             self.assertEqual(next(stream), 1)
             with self.assertRaises(TimeoutError):
                 next(stream)
             self.assertTrue((Path(tmp) / "test.timed-out").exists())
+
+    def test_no_delta_before_client_start_handshake(self):
+        with TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            stream = controlled_stream(iter(["first"]), directory, "test")
+            received = []
+            thread = threading.Thread(target=lambda: received.append(next(stream)))
+            thread.start()
+            try:
+                for _ in range(1000):
+                    if (directory / "test.ready").exists():
+                        break
+                    threading.Event().wait(0.001)
+                self.assertTrue((directory / "test.ready").exists())
+                self.assertEqual(received, [])
+            finally:
+                (directory / "test.start").touch()
+                thread.join(timeout=2)
+                stream.close()
+            self.assertEqual(received, ["first"])
