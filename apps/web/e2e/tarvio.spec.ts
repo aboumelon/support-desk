@@ -107,6 +107,10 @@ test("Tarvio real workflows preserve drafts, retries, persisted transitions, kno
   await expect
     .poll(() => existsSync(signal("finished")), { timeout: 20000 })
     .toBe(true);
+  expect(
+    existsSync(signal("timed-out")),
+    "Barrier must be explicitly released, never expire",
+  ).toBe(false);
   // Assert again after the real worker/finalizer has resumed and exited.
   expect((await snapshot(page, c1)).active_run?.status).toBe("superseded");
   expect(

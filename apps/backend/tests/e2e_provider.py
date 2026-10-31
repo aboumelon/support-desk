@@ -25,6 +25,7 @@ def controlled_stream(
     deadline = time.monotonic() + timeout
     while not (directory / f"{token}.release").exists():
         if time.monotonic() >= deadline:
+            (directory / f"{token}.timed-out").touch()
             raise TimeoutError("E2E cancellation barrier was not released")
         threading.Event().wait(0.01)  # IPC polling, not simulated provider latency.
     yield from stream

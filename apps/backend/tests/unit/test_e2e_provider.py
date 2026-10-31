@@ -44,3 +44,4 @@ class BrowserBarrierTest(unittest.TestCase):
             self.assertEqual(next(stream), 1)
             with self.assertRaises(TimeoutError):
                 next(stream)
+            self.assertTrue((Path(tmp) / "test.timed-out").exists())
