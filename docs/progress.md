@@ -4,6 +4,13 @@ Last updated: 2026-10-31 (Asia/Tehran). Authority: [original design](../supportd
 
 ## Phase 1 final CI stabilization (2026-10-31)
 
+- Follow-up5cea99b repetition caught a test-infrastructure gate-precondition bug in one
+  PR repetition (not AI cancellation): old composer visibility could precede new initial
+  snapshot loading. Strengthened `fresh()` to await creationHTTP200 and the exact new
+  conversation region before gating reconciliation. Original red result retained in the
+  stabilization record; latest-head full-suite/CSP verification is required before merge.
+
+
 - Runtime/test revision c246b92: real PR browser workflow41207300422 and push workflow
   41207297090 both passed. Each ran the entire suite three times:32 passed/1 existing
   conditional CSP skip per repetition, followed by the separate production-CSP test:

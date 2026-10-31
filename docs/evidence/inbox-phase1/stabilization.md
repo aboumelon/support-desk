@@ -140,3 +140,24 @@ repeated evidence, not a mathematical guarantee against every future flake. The 
 cannot run PostgreSQL/backend locally; integrated evidence above comes from real CI.
 Raw Actions log/trace artifact download hosts remain blocked here; API-visible GitHub
 assertion annotations and named-step conclusions are available and are used for results.
+
+
+### Additional final-head repetition and corrected gate precondition
+
+The documentation-only head5cea99b push run
+[41208156368](https://github.com/aboumelon/support-desk/actions/runs/41208156368) passed
+all three suites and CSP. Its PR run
+[41208161043](https://github.com/aboumelon/support-desk/actions/runs/41208161043) passed
+two full suites, then had31 passed/1 failed in repetition3; CSP still passed independently.
+The failure was at filling the retry composer before the retry action, not cancellation
+or admission. It exposed a test-infrastructure regression introduced by the snapshot gate:
+`fresh()` accepted any visible composer, including the previous conversation's composer
+while the creation request was still in flight. Arming the gate could then block the new
+conversation's initial snapshot, preventing its composer from mounting.
+
+Corrected by awaiting the real creation HTTP200 and the exact returned conversation's
+reading-region label before considering it ready. Only after that initial snapshot loads
+is the retry reconciliation gate armed. UI timeouts, expected statuses, idempotency and
+persistence assertions remain unchanged. This observed red run is retained, not retried
+away or counted as green. Fresh-head full-suite/CSP results are required before clearing
+this regression and are recorded in PR#1's final verification comment.

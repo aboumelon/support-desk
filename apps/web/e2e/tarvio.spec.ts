@@ -32,7 +32,22 @@ async function bootstrap(page: Page) {
   return (await page.request.get("/api/v1/customer/session")).json();
 }
 async function fresh(page: Page) {
-  await button(page, "گفت‌وگوی تازه").click();
+  const [response] = await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        response.url().endsWith("/api/v1/customer/conversations"),
+    ),
+    button(page, "گفت‌وگوی تازه").click(),
+  ]);
+  expect(response.status()).toBe(200);
+  const created = await response.json();
+  // A visible old composer is not proof that creation/navigation has finished.
+  // In particular, do not gate reconciliation until the NEW initial snapshot loads.
+  await expect(page.locator(".reading-pane")).toHaveAttribute(
+    "aria-label",
+    `گفت‌وگو ${ref(created.id)}`,
+  );
   await expect(message(page)).toBeVisible();
 }
 async function send(page: Page, body: string) {
