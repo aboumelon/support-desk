@@ -105,6 +105,9 @@ PLAYWRIGHT_OUTPUT_DIR=test-results/csp CSP_BASE_URL=http://localhost:5184 pnpm -
 The ordinary suite's existing conditional CSP skip is retained because that test targets
 the separate built frontend server. It is subsequently executed explicitly, not omitted.
 Outputs for all repetitions/CSP are preserved separately. No retries are added.
+Later repetitions and CSP run even if an earlier suite fails, provided stack readiness
+succeeded and the job was not cancelled. Failed steps still fail the job; there is no
+continue-on-error or hidden/red-to-green conversion.
 
 ## Verification results
 
