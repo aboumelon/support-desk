@@ -111,8 +111,32 @@ continue-on-error or hidden/red-to-green conversion.
 
 ## Verification results
 
-Pending completed full-suite repetitions and separate CSP result; see the PR's latest
-Actions checks. Do not infer green CI from the mechanism or from the focused unit checks.
-The local sandbox cannot run PostgreSQL/backend; integrated evidence must come from CI.
+Verified runtime/test revision: `c246b92` (2026-10-31).
+
+| Workflow run | Full suite 1 | Full suite 2 | Full suite 3 | Separate production-CSP |
+| --- | --- | --- | --- | --- |
+| [PR41207300422](https://github.com/aboumelon/support-desk/actions/runs/41207300422) |32 passed,1 conditional skip |32 passed,1 conditional skip |32 passed,1 conditional skip |1 passed |
+| [Push41207297090](https://github.com/aboumelon/support-desk/actions/runs/41207297090) |32 passed,1 conditional skip |32 passed,1 conditional skip |32 passed,1 conditional skip |1 passed |
+
+Both workflows succeeded. Thus the real cancellation scenario passed **six consecutive
+full-suite invocations**, not just a filtered rerun, with real backend/worker/realtime
+and persistence. No admission429 or cancellation race appeared in those six invocations.
+The existing conditional skip is only the production-CSP case when targeting the dev
+server; the same test then ran and passed separately against the built frontend and
+production CSP policy (not a claim of deployed Caddy/HTTPS verification).
+Foundation checks also passed for this revision. Local checks:25 web unit tests,
+typecheck, lint, three standard-library barrier tests and Ruff checks passed. The earlier
+runtime build was unchanged; CI rebuilt and checked the actual production frontend.
+
+Earlier implementation attempts are not hidden: at56f615e, quota-scheduled admission
+outlasted a pre-existing5s route-readiness assertion in portfolio (31 passed,1 failed);
+at811f54f, one full push-suite pass was followed by a manual-retry reconciliation race,
+while the PR suite failed that retry assertion (31 passed,1 failed). These prompted
+explicit bootstrap-response and reconciliation synchronization, not relaxed outcomes.
+
+The final follow-up commit records documentation/results only; current-head workflow
+status is available on PR#1 without changing the tested runtime. Six passes are bounded
+repeated evidence, not a mathematical guarantee against every future flake. The sandbox
+cannot run PostgreSQL/backend locally; integrated evidence above comes from real CI.
 Raw Actions log/trace artifact download hosts remain blocked here; API-visible GitHub
 assertion annotations and named-step conclusions are available and are used for results.

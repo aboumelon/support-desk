@@ -2,6 +2,7 @@
 
 Date: 2026-10-31. Branch: `arena/9041878a-support-desk`. Review only; do not merge.
 
+> Final verification: [CI stabilization and repeated integrated results](stabilization.md).
 > Follow-up: [CI/regression review](ci-review.md) records the staff source breakpoint
 > correction, added coverage and current merge blockers. Initial evidence below is retained.
 

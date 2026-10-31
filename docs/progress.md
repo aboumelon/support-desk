@@ -2,6 +2,27 @@
 
 Last updated: 2026-10-31 (Asia/Tehran). Authority: [original design](../supportdesk-system-design-v1.md).
 
+## Phase 1 final CI stabilization (2026-10-31)
+
+- Runtime/test revision c246b92: real PR browser workflow41207300422 and push workflow
+  41207297090 both passed. Each ran the entire suite three times:32 passed/1 existing
+  conditional CSP skip per repetition, followed by the separate production-CSP test:
+  1 passed. Six consecutive full-suite cancellation checks passed; no429 failures.
+- Deterministic first-delta barrier exists only in guarded tests-only Celery entrypoint;
+  running→handoff→superseded is asserted before release, then superseded and zero
+  persisted assistant messages are reasserted after the real worker/finalizer exits.
+  Timeout is a failure, not a fallback. Production source/contracts/semantics unchanged.
+- Real public session admissions are paced13s apart across contexts, repeated suites
+  and CSP. No quota reset/bypass, identity spoof,429 retry, assertion relaxation or
+  additional skip. Lost-response/manual-retry scenario now explicitly gates snapshot
+  reconciliation until a second UI request is observed; persistence assertions retained.
+- Foundation passed. Local25 web unit tests/typecheck/lint plus3 barrier unit tests and
+  Ruff passed. Final follow-up is documentation only; latest PR checks remain the
+  authority for its head. No merge and no Phase2; PR stays draft for human review.
+- Root cause, production isolation, reproduction and exact observed run results:
+  [final stabilization record](evidence/inbox-phase1/stabilization.md). Historical raw
+  artifact downloads remain blocked; this does not negate the fresh integrated CI evidence.
+
 ## Phase 1 CI / regression review (2026-10-31)
 
 - Reviewed main/PR Actions metadata; both exact parent and original PR fail the combined

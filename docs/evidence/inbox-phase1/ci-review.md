@@ -1,6 +1,9 @@
 # Phase 1 CI / regression review — 2026-10-31
 
-Status: **not cleared for merge**. PR #1 remains draft; no Phase 2 work.
+Historical investigation status: blocked at the revisions recorded below. The subsequent
+[final stabilization record](stabilization.md) supersedes these pending CI proposals and
+records six full-suite passes plus separate CSP passes. PR#1 remains draft/unmerged; no
+Phase2 work.
 
 ## Compared revisions and evidence availability
 
