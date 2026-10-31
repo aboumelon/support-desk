@@ -139,7 +139,7 @@ test("Tarvio real workflows preserve drafts, retries, persisted transitions, kno
       .getByText("پاسخ واقعی کارشناس در نمای تارویو", { exact: true }),
   ).toBeVisible();
   await staff
-    .getByRole("tab", { name: "در انتظار کارشناس", exact: true })
+    .getByRole("button", { name: "در صف", exact: true })
     .click();
   await expect(button(staff, `گفت‌وگو ${ref(c1)}`)).toBeVisible();
   await expect(button(staff, `گفت‌وگو ${ref(c2)}`)).not.toBeVisible();

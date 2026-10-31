@@ -1,6 +1,32 @@
 # SupportDesk implementation progress
 
-Last updated: 2026-10-30 (Asia/Tehran). Authority: [original design](../supportdesk-system-design-v1.md).
+Last updated: 2026-10-31 (Asia/Tehran). Authority: [original design](../supportdesk-system-design-v1.md).
+
+## Phase 1 — responsive operator Inbox (2026-10-31)
+
+- Implements only the approved staff Inbox list/detail boundary (<1120px), persistent
+  desktop panes, and index widths 304px (1120–1439), 320px (1440–1599), 344px (1600+).
+  Inbox rail is 84px below 1440 and 92px above; mobile retains existing bottom navigation.
+- Staff filters are visible native pressed buttons in a labeled group, with 44px targets.
+  Existing filter request parameters and customer tab presentation are retained.
+- Staff query/filter/selection and anchor-based pane scroll use actor/workspace-scoped
+  session storage cleared by existing logout reset. Browser Back/Forward is handled;
+  panes stay mounted on resize. Existing composer and IndexedDB pending-send persistence,
+  routes, backend contracts and send/control functions are unchanged. Older transcript
+  history is rehydrated through the existing history function when needed for restoration.
+- Verification: 25 Vitest tests, typecheck, lint, production build and 15 focused Playwright
+  tests passed. Build emitted non-blocking Zod PURE-comment warnings. New browser-suite
+  setup initially had incorrect selectors and a too-short history fixture; corrected
+  fixture assumptions and reran the complete suite successfully.
+- **Evidence limitation:** browser tests/screenshots run the real React frontend with
+  intercepted deterministic API/session fixtures and stubbed realtime transport, not
+  a real authenticated backend. Docker/uv are unavailable. Existing backend-integrated
+  browser suites, real login/send/ownership/provider behavior and server-side persistence
+  were not verified here and remain review/release gates.
+- Fresh labeled screenshots and reproducible commands: [verification record](evidence/inbox-phase1/README.md).
+  Source inspector redesign, customer desktop layout and Knowledge proposals remain
+  deferred; their approved [design baseline](design/desktop-design-spec.md) is preserved.
+  No merge is authorized.
 
 ## Production Content Security Policy compliance for realtime schema validation (2026-10-30)
 

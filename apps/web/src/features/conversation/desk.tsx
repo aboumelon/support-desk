@@ -16,6 +16,14 @@ import {
 import { useConversation } from "./use-conversation";
 import { Timeline } from "./timeline";
 import { SourceInspector, type SourceSelection } from "./source-inspector";
+import {
+  inboxFilters,
+  readInboxView,
+  saveInboxView,
+  STAFF_SINGLE_PANE,
+  type InboxFilter,
+} from "./inbox-view";
+import { usePanePosition } from "./use-pane-position";
 
 export function Desk({
   session,
@@ -36,9 +44,21 @@ export function Desk({
     initialConversation ??
       (getDraft(`${audience}:${workspace}:${actor}:selection`) || null),
   );
-  const [filter, setFilter] = useState("open");
-  const [query, setQuery] = useState("");
-  const [search, setSearch] = useState("");
+  const staff = audience === "staff";
+  const viewScope = `${audience}:${workspace}:${actor}`;
+  const [initialView] = useState(() =>
+    staff
+      ? readInboxView(viewScope)
+      : { filter: "open" as InboxFilter, query: "" },
+  );
+  const [filter, setFilter] = useState<InboxFilter>(initialView.filter);
+  const [query, setQuery] = useState(initialView.query);
+  const [search, setSearch] = useState(initialView.query.trim());
+  const listViewport = useRef<HTMLDivElement>(null);
+  const focusList = useRef(!initialConversation);
+  useEffect(() => {
+    if (staff) saveInboxView(viewScope, { filter, query });
+  }, [staff, viewScope, filter, query]);
   useEffect(() => {
     const timer = setTimeout(() => setSearch(query.trim()), 300);
     return () => clearTimeout(timer);
@@ -48,17 +68,26 @@ export function Desk({
   const [error, setError] = useState("");
   const [mobileDetail, setMobileDetail] = useState(
     Boolean(
-      initialConversation ||
-      getDraft(`${audience}:${workspace}:${actor}:selection`),
+      initialConversation || (!staff && getDraft(`${viewScope}:selection`)),
     ),
   );
-  const narrow = useMedia("(max-width:760px)");
+  const narrow = useMedia(staff ? STAFF_SINGLE_PANE : "(max-width:760px)");
+  const wasNarrow = useRef(narrow);
   useEffect(() => {
-    if (initialConversation) {
-      setSelected(initialConversation);
-      setMobileDetail(true);
-    }
-  }, [initialConversation]);
+    // Resizing changes presentation only; keep the selected pane and its state mounted.
+    if (staff && narrow && !wasNarrow.current)
+      setMobileDetail(Boolean(selected));
+    wasNarrow.current = narrow;
+  }, [staff, narrow, selected]);
+  useEffect(() => {
+    if (initialConversation) setSelected(initialConversation);
+    // The inbox route is a list even when a previous selection is retained.
+    // This also handles browser Back/Forward, not just the visible Back button.
+    if (staff) {
+      setMobileDetail(Boolean(initialConversation));
+      if (!initialConversation) focusList.current = true;
+    } else if (initialConversation) setMobileDetail(true);
+  }, [initialConversation, staff]);
   const list = useInfiniteQuery({
     queryKey: ["conversations", audience, workspace, filter, search],
     enabled: !shortSearch,
@@ -89,6 +118,14 @@ export function Desk({
     },
     getNextPageParam: (last) => last.next,
   });
+  const rememberListPosition = usePanePosition({
+    viewport: listViewport,
+    scope: `${viewScope}:list:${filter}:${search}`,
+    enabled: staff,
+    visible: !narrow || !mobileDetail,
+    ready: !list.isLoading && query.trim() === search,
+    anchorAttribute: "data-conversation-id",
+  });
   const visible = [
     ...new Map(
       (list.data?.pages.flatMap((page) => page.items) ?? []).map(
@@ -97,8 +134,23 @@ export function Desk({
     ).values(),
   ];
   useEffect(() => {
-    if (!selected && !narrow && visible[0]) setSelected(visible[0].id);
+    if (!selected && !narrow && visible[0]) {
+      setSelected(visible[0].id);
+      if (staff) saveDraft(`${viewScope}:selection`, visible[0].id);
+    }
   }, [list.data, narrow, selected]);
+  useEffect(() => {
+    if (!staff || !narrow || mobileDetail || !focusList.current) return;
+    const row = Array.from(
+      listViewport.current?.querySelectorAll<HTMLButtonElement>(
+        "[data-conversation-id]",
+      ) ?? [],
+    ).find((node) => node.dataset.conversationId === selected);
+    if (row) {
+      row.focus({ preventScroll: true });
+      focusList.current = false;
+    }
+  }, [staff, narrow, mobileDetail, selected, list.data]);
   const select = (id: string) => {
     setSelected(id);
     saveDraft(`${audience}:${workspace}:${actor}:selection`, id);
@@ -131,7 +183,7 @@ export function Desk({
   };
   return (
     <div
-      className={`operator-shell ${audience === "customer" ? "customer-desk" : ""} ${mobileDetail ? "mobile-detail" : "mobile-list"}`}
+      className={`operator-shell ${staff ? "staff-desk" : "customer-desk"} ${mobileDetail ? "mobile-detail" : "mobile-list"}`}
     >
       <section
         className={`conversation-index ${mobileDetail ? "mobile-hidden" : ""}`}
@@ -162,26 +214,34 @@ export function Desk({
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
-        <div className="filters" role="tablist" aria-label={t("filterLabel")}>
-          {(audience === "staff"
-            ? ["open", "queue", "mine", "resolved"]
-            : ["open", "resolved"]
-          ).map((value) => (
-            <button
-              key={value}
-              role="tab"
-              aria-selected={filter === value}
-              className={filter === value ? "active" : ""}
-              onClick={() => {
-                setFilter(value);
-                setMobileDetail(false);
-              }}
-            >
-              {t(value === "mine" ? "assignedToMe" : value)}
-            </button>
-          ))}
+        <div
+          className="filters"
+          role={staff ? "group" : "tablist"}
+          aria-label={t("filterLabel")}
+        >
+          {(audience === "staff" ? inboxFilters : ["open", "resolved"]).map(
+            (value) => (
+              <button
+                key={value}
+                role={staff ? undefined : "tab"}
+                aria-selected={staff ? undefined : filter === value}
+                aria-pressed={staff ? filter === value : undefined}
+                className={filter === value ? "active" : ""}
+                onClick={() => {
+                  setFilter(value as InboxFilter);
+                  setMobileDetail(false);
+                }}
+              >
+                {t(staff ? `inboxFilter_${value}` : value)}
+              </button>
+            ),
+          )}
         </div>
-        <div className="conversation-list">
+        <div
+          className="conversation-list"
+          ref={listViewport}
+          onScroll={rememberListPosition}
+        >
           {shortSearch ? (
             <p className="list-notice">{t("searchHint")}</p>
           ) : query.trim() !== search || list.isLoading ? (
@@ -202,6 +262,7 @@ export function Desk({
               <button
                 className={`conversation-row ${selected === c.id ? "selected" : ""}`}
                 key={c.id}
+                data-conversation-id={c.id}
                 onClick={() => select(c.id)}
                 aria-label={`${t("conversation")} ${reference(c.id)}`}
                 aria-current={selected === c.id ? "true" : undefined}
@@ -264,7 +325,9 @@ export function Desk({
           audience={audience}
           workspace={workspace}
           id={selected}
+          active={!staff || !narrow || mobileDetail}
           onBack={() => {
+            focusList.current = true;
             setMobileDetail(false);
             if (audience === "staff")
               void navigate({
@@ -295,6 +358,7 @@ function ConversationPane({
   id,
   onBack,
   onNew,
+  active,
 }: {
   session: Session;
   audience: Audience;
@@ -302,6 +366,7 @@ function ConversationPane({
   id: string;
   onBack: () => void;
   onNew: () => void;
+  active: boolean;
 }) {
   const { t } = useTranslation();
   const state = useConversation(session, audience, workspace, id);
@@ -369,11 +434,12 @@ function ConversationPane({
       >
         <header className="conversation-header">
           <button
-            className="mobile-back"
+            className={`mobile-back ${audience === "staff" ? "inbox-back" : ""}`}
             aria-label={t("backToList")}
             onClick={onBack}
           >
             <Icon name="arrow" />
+            {audience === "staff" && <span>{t("inboxBackShort")}</span>}
           </button>
           <span className="avatar avatar-large">
             <Icon name="user" />
@@ -493,6 +559,7 @@ function ConversationPane({
         </div>
         <Timeline
           state={state}
+          active={active}
           selection={selection}
           onSource={(messageId, label) =>
             setSelection({ conversationId: id, messageId, label })
