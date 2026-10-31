@@ -338,3 +338,198 @@ test("fixture: native filter buttons support keyboard and keep existing query co
     await expect(page.locator(".filters [role=tab]")).toHaveCount(0);
   }
 });
+
+async function citationFixture(page: Page) {
+  await fixtures(page);
+  await page.route("**/snapshot", (route) => {
+    const items = messages(id(0));
+    items[items.length - 1] = {
+      ...items.at(-1)!,
+      sender_kind: "assistant",
+      body: "پاسخ مستند دربارهٔ درخواست آزمایشی [S1]",
+    };
+    return route.fulfill({
+      json: {
+        conversation: conversations[0],
+        messages: items,
+        read_cursors: {},
+        event_cursor: 50,
+        active_run: null,
+      },
+    });
+  });
+  await page.route("**/citations/**", (route) =>
+    route.fulfill({
+      json: {
+        available: true,
+        title: "سند آزمایشی",
+        locator: "بخش اول",
+        excerpt: "متن منبع آزمایشی برای بررسی چیدمان و دسترس‌پذیری.",
+      },
+    }),
+  );
+}
+for (const width of [1200, 1280, 1365, 1439]) {
+  test(`fixture: staff source does not compress the conversation at ${width}px`, async ({
+    page,
+  }) => {
+    await citationFixture(page);
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto(`${root}/conversations/${id(0)}`);
+    const chip = page.getByRole("button", { name: "منبع S1", exact: true });
+    await expect(chip).toBeVisible();
+    await page.locator("textarea").fill("پیش‌نویس هنگام بررسی منبع");
+    const before = (await page.locator(".reading-pane").boundingBox())!.width;
+    await chip.click();
+    const after = (await page.locator(".reading-pane").boundingBox())!.width;
+    await test
+      .info()
+      .attach("source-geometry", {
+        body: JSON.stringify({ width, before, after }),
+        contentType: "application/json",
+      });
+    expect(after).toBe(before);
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.locator(".source-inspector")).toHaveCount(0);
+    expect(
+      (await page.locator(".conversation-index").boundingBox())!.width,
+    ).toBe(304);
+    await expect(page.getByRole("dialog")).toContainText("متن منبع آزمایشی");
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(chip).toBeFocused();
+    await expect(page.locator("textarea")).toHaveValue(
+      "پیش‌نویس هنگام بررسی منبع",
+    );
+    await assertNoOverflow(page);
+  });
+}
+
+test("fixture: source 1439/1440 transition retains citation selection, reader anchor and draft", async ({
+  page,
+}) => {
+  await citationFixture(page);
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto(`${root}/conversations/${id(0)}`);
+  await page.locator("textarea").fill("پیش‌نویس محفوظ");
+  await page.getByRole("button", { name: "منبع S1", exact: true }).click();
+  await expect(
+    page.getByRole("complementary", { name: "یادداشت منبع", exact: true }),
+  ).toBeVisible();
+  await page.locator(".messages-scroll").evaluate((el) => {
+    el.scrollTop = 1200;
+  });
+  await page.waitForTimeout(100);
+  const before = await anchor(page);
+  await page.setViewportSize({ width: 1439, height: 1000 });
+  await expect(page.getByRole("dialog")).toContainText("متن منبع آزمایشی");
+  await expect(page.locator(".source-chip")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator(".source-inspector")).toContainText(
+    "متن منبع آزمایشی",
+  );
+  await expect(page.locator("textarea")).toHaveValue("پیش‌نویس محفوظ");
+  await expect.poll(async () => (await anchor(page)).id).toBe(before.id);
+  expect(Math.abs((await anchor(page)).offset - before.offset)).toBeLessThan(3);
+  await assertNoOverflow(page);
+});
+
+test("fixture: login navigation enters staff Inbox without creating a visitor session", async ({
+  page,
+}) => {
+  await fixtures(page);
+  let loggedIn = false;
+  await page.route("**/auth/staff/me", (route) =>
+    loggedIn ? route.fallback() : route.fulfill({ status: 401, json: {} }),
+  );
+  await page.route("**/auth/staff/login", async (route) => {
+    expect(route.request().method()).toBe("POST");
+    expect(route.request().postDataJSON()).toEqual({
+      email: "review@example.invalid",
+      password: "Synthetic-review-only!",
+    });
+    loggedIn = true;
+    return route.fulfill({
+      json: { memberships: [{ workspace_id: workspace }] },
+    });
+  });
+  const visitorMutations: string[] = [];
+  page.on("request", (request) => {
+    if (
+      request.method() === "POST" &&
+      /\/api\/v1\/(public\/demo|customer\/)/.test(request.url())
+    )
+      visitorMutations.push(request.url());
+  });
+  await page.goto("/login");
+  await page
+    .getByLabel("ایمیل", { exact: true })
+    .fill("review@example.invalid");
+  await page
+    .getByLabel("رمز عبور", { exact: true })
+    .fill("Synthetic-review-only!");
+  await page
+    .getByRole("button", { name: "ورود به میز کار", exact: true })
+    .click();
+  await expect(page).toHaveURL(`${root}/inbox`);
+  await expect(
+    page.getByRole("heading", { name: "صندوق گفتگو", exact: true }),
+  ).toBeVisible();
+  await page.locator(`[data-conversation-id="${id(1)}"]`).click();
+  await expect(page).toHaveURL(`${root}/conversations/${id(1)}`);
+  await expect(page.locator("textarea")).toBeEditable();
+  await page.goBack();
+  await expect(page).toHaveURL(`${root}/inbox`);
+  expect(visitorMutations).toEqual([]);
+});
+
+for (const width of [390, 1365]) {
+  test(`fixture: customer retains new-conversation control at ${width}px`, async ({
+    page,
+  }) => {
+    await fixtures(page);
+    await page.route("**/customer/session", (route) =>
+      route.fulfill({
+        json: {
+          audience: "visitor",
+          workspace_id: workspace,
+          actor_id: "fixture-visitor",
+          csrf_token: "synthetic-only",
+          memberships: [],
+          public_key: "fixture-public",
+          ai_available: true,
+          provider_mode: "fake",
+          fictional_data: true,
+        },
+      }),
+    );
+    await page.route("**/customer/conversations", (route) =>
+      route.request().method() === "POST"
+        ? route.fulfill({ json: conversations[1] })
+        : route.fallback(),
+    );
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto("/workspace");
+    const create = page.getByRole("button", {
+      name: "گفت‌وگوی تازه",
+      exact: true,
+    });
+    await expect(create).toBeVisible();
+    await create.click();
+    await expect(page.locator("textarea")).toBeEditable();
+    await expect(page.locator(".reading-pane")).toHaveAttribute(
+      "aria-label",
+      "گفت‌وگو C0000001",
+    );
+    if (width < 760)
+      await page
+        .getByRole("button", { name: "بازگشت به فهرست", exact: true })
+        .click();
+    await expect(create).toBeVisible();
+    await assertNoOverflow(page);
+  });
+}

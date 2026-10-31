@@ -61,6 +61,46 @@ test("isolated customer and operator complete persistent assistant and human cha
       .locator(".messages-scroll")
       .getByText("پاسخ کارشناس برای آزمون ماندگاری", { exact: true }),
   ).toBeVisible();
+  // Phase 1 regression: navigation must retain authenticated scope and draft
+  // across the persistent/single-pane boundary without minting new sessions.
+  const conversation = (
+    await (await page.request.get("/api/v1/customer/conversations")).json()
+  )[0];
+  const conversationRow = staff.getByRole("button", {
+    name: `گفت‌وگو ${conversation.id.slice(0, 8).toUpperCase()}`,
+    exact: true,
+  });
+  await conversationRow.click();
+  await expect(staff).toHaveURL(
+    `/app/${customerIdentity.workspace_id}/conversations/${conversation.id}`,
+  );
+  await staff
+    .getByRole("textbox", { name: "پیام", exact: true })
+    .fill("پیش‌نویس بررسی ناوبری");
+  await staff.setViewportSize({ width: 1119, height: 1000 });
+  await expect(staff.locator(".conversation-index")).toBeHidden();
+  await staff
+    .getByRole("button", { name: "بازگشت به فهرست", exact: true })
+    .click();
+  await expect(staff).toHaveURL(`/app/${customerIdentity.workspace_id}/inbox`);
+  await expect(conversationRow).toBeVisible();
+  await conversationRow.click();
+  await expect(
+    staff.getByRole("textbox", { name: "پیام", exact: true }),
+  ).toHaveValue("پیش‌نویس بررسی ناوبری");
+  await staff.setViewportSize({ width: 1120, height: 1000 });
+  await expect(staff.locator(".conversation-index")).toBeVisible();
+  await staff.goBack();
+  await expect(staff).toHaveURL(`/app/${customerIdentity.workspace_id}/inbox`);
+  await expect(
+    staff.getByRole("textbox", { name: "پیام", exact: true }),
+  ).toHaveValue("پیش‌نویس بررسی ناوبری");
+  expect((await staff.request.get("/api/v1/auth/staff/me")).status()).toBe(200);
+  expect(
+    (await (await page.request.get("/api/v1/customer/session")).json())
+      .actor_id,
+  ).toBe(customerIdentity.actor_id);
+  await staff.setViewportSize({ width: 1365, height: 1000 });
   await page.context().setOffline(true);
   await staff
     .getByRole("textbox", { name: "پیام", exact: true })

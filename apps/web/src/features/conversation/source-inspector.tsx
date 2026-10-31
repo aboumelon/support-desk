@@ -22,7 +22,11 @@ export function SourceInspector({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const narrow = useMedia("(max-width: 1199px)");
+  // Phase 1's fixed-width staff index leaves too little reading space for a
+  // third pane below 1440px. Reuse the existing dialog; customer policy is unchanged.
+  const narrow = useMedia(
+    audience === "staff" ? "(max-width: 1439px)" : "(max-width: 1199px)",
+  );
   const source = useQuery({
     queryKey: [
       "citation",

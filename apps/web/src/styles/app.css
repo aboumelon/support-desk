@@ -2863,8 +2863,8 @@ body,
   }
 }
 
-/* Phase 1: operator Inbox only. Customer, Knowledge and source lifecycle retain
-   their existing policies; the index never contracts when sources are open. */
+/* Phase 1: operator Inbox only. Customer and Knowledge retain their policies.
+   Staff sources reuse the existing dialog below1440 to protect reading space. */
 .tarvio .inbox-workspace {
   grid-template-columns: 84px minmax(0, 1fr);
 }
@@ -2910,7 +2910,7 @@ body,
     --inbox-index: 344px;
   }
 }
-@media (max-width: 1199px) {
+@media (max-width: 1439px) {
   .tarvio .staff-desk:has(> .source-inspector) {
     grid-template-columns: var(--inbox-index) minmax(0, 1fr);
   }

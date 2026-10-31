@@ -2,6 +2,21 @@
 
 Last updated: 2026-10-31 (Asia/Tehran). Authority: [original design](../supportdesk-system-design-v1.md).
 
+## Phase 1 CI / regression review (2026-10-31)
+
+- Reviewed main/PR Actions metadata; both exact parent and original PR fail the combined
+  browser step, but original raw logs/traces redirect to blocked download hosts. Do not
+  attribute individual failures as pre-existing without those artifacts.
+- Confirmed and fixed staff source readability regression at1200–1439: existing source
+  dialog now used below1440 for staff only, retaining customer policy and existing aside.
+  Four geometry tests failed before and pass after the minimal fix.
+- 23 fixture browser tests /25 unit tests plus typecheck/lint/build pass locally. Strengthened
+  the existing backend-integrated navigation flow and enabled GitHub assertion reporting;
+  fresh integrated CI and original-trace review remain gates. No assertions weakened,
+  tests skipped, provider fixtures modified, backend behavior changed or Phase 2 started.
+- Detailed classifications, main-CSS measurements and evidence limits:
+  [CI/regression investigation](evidence/inbox-phase1/ci-review.md). **Not cleared for merge.**
+
 ## Phase 1 — responsive operator Inbox (2026-10-31)
 
 - Implements only the approved staff Inbox list/detail boundary (<1120px), persistent

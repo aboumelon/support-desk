@@ -2,6 +2,9 @@
 
 Date: 2026-10-31. Branch: `arena/9041878a-support-desk`. Review only; do not merge.
 
+> Follow-up: [CI/regression review](ci-review.md) records the staff source breakpoint
+> correction, added coverage and current merge blockers. Initial evidence below is retained.
+
 ## Evidence boundary
 
 These are **fresh screenshots of the actual React application with browser-intercepted,
