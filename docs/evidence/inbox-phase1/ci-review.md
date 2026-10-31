@@ -85,3 +85,56 @@ No extra demo bootstrap or seed data was added to that shared-backend suite.
 Local Docker/uv/backend remain unavailable. Synthetic login/creation tests establish
 frontend navigation only, not real authentication, session security or persistence.
 Original CI artifacts and a fresh backend-integrated CI result remain blocking evidence.
+
+
+## Fresh integrated CI at 698a3c7 — assertion-level evidence
+
+The added reporter made failure assertions available through GitHub check annotations:
+
+- [PR run 41202784838](https://github.com/aboumelon/support-desk/actions/runs/41202784838),
+  job124541745719: **31 passed,1 failed,1 skipped**. Only failing test:
+  `tarvio.spec.ts:50`, expected `superseded`, received `succeeded` (5s poll timeout).
+- [Push run 41202781451](https://github.com/aboumelon/support-desk/actions/runs/41202781451),
+  job124541734693: **31 passed,1 failed,1 skipped**. Only failing test:
+  `customer-entry.spec.ts:78`, expected `/app/undefined/inbox`, actual a valid UUID
+  workspace Inbox. The Tarvio supersession test **passed on this identical commit**.
+- Foundation passed. The skipped production-CSP test is the existing conditional skip
+  in the ordinary dev-server suite; its separate production step was not reached because
+  the preceding suite failed. No skip was added by this review.
+
+Consequently the standalone staff-login test and the strengthened real authenticated
+customer/operator workflow **passed in both fresh CI runs**, including new1119/1120,
+route/Back/draft/session-scope assertions. This is real CI/backend evidence, distinct
+from local intercepted-session checks. It is not a claim that every authenticated
+workflow passed: the broad Tarvio scenario stops early in the failing PR run.
+
+### Revised classifications
+
+1. **Supersession expectation: pre-existing test flakiness/race, confirmed timing-sensitive.**
+   Same test passes/fails on the same commit. Backend supersession only changes queued/
+   running runs; fake-provider normal completion can win against UI handoff. Test,
+   provider, default config and CI startup predate Phase1. The original main traces are
+   still unavailable, so this does not establish which assertion failed on main.
+   No change to `superseded` expectation, assistant-message-count assertion, provider
+   scenario, backend finalization or fixtures is made. A deterministic cancellation
+   barrier (or a separately approved CI configuration matching the documented slow
+   scenario) remains needed; merely accepting `succeeded` would invalidate the test.
+2. **Customer-entry “staff login” failure: pre-existing test synchronization race.**
+   Its source is byte-identical to main. It awaits URL navigation, then immediately
+   reads `/customer/session` while `CustomerEntry` is still doing GET/visitor-session
+   POST. The API error body lacks workspace_id, producing `/app/undefined/inbox`;
+   staff login itself reaches a real authorized Inbox. Fixed test readiness only:
+   wait for the existing new-conversation control, explicitly require HTTP200 and
+   a UUID workspace identity, then retain the exact staff URL and all conversation/
+   reply assertions. No fixed fixture, arbitrary sleep, retry, selector relaxation,
+   backend or product behavior change.
+3. **Missing new-conversation controls:** not a failure in either fresh run. Local
+   fixture creation checks and the real integrated customer/operator flow pass.
+   Original-run trace still needed to attribute any historical occurrence. Absence
+   of the control before visitor bootstrap completes is not an Inbox navigation bug.
+4. **Staff source compression:** confirmed new Phase1 regression fixed as above;
+   all added source tests passed in both fresh integrated CI suites.
+
+Historical raw log/CI trace retrieval remains blocked. Check annotations establish
+these new failure messages and suite outcomes, not network timelines or screenshots.
+The original per-failure comparison remains incomplete; do not claim it was inspected.

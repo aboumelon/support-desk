@@ -14,6 +14,12 @@ Last updated: 2026-10-31 (Asia/Tehran). Authority: [original design](../supportd
   the existing backend-integrated navigation flow and enabled GitHub assertion reporting;
   fresh integrated CI and original-trace review remain gates. No assertions weakened,
   tests skipped, provider fixtures modified, backend behavior changed or Phase 2 started.
+- Fresh integrated CI at698a3c7: both runs31 passed/1 failed/1 existing conditional skip.
+  Standalone staff login and strengthened authenticated route/resize/draft workflow
+  passed both. One run failed pre-existing AI timing (`superseded` vs `succeeded`),
+  the other a pre-existing early visitor-identity read (`/app/undefined/inbox`).
+  Strengthened customer-entry readiness/status/identity assertions without changing
+  fixtures or weakening expected URLs; AI expectation/config left untouched.
 - Detailed classifications, main-CSS measurements and evidence limits:
   [CI/regression investigation](evidence/inbox-phase1/ci-review.md). **Not cleared for merge.**
 
