@@ -9,7 +9,22 @@ const message = (page: Page) =>
 const ref = (id: string) => id.slice(0, 8).toUpperCase();
 async function bootstrap(page: Page) {
   await page.goto("/demo");
-  await button(page, "شروع دموی مستقل").click();
+  const [bootstrapResponse] = await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        response.url().endsWith("/api/v1/public/demo") &&
+        response.request().method() === "POST",
+    ),
+    button(page, "شروع دموی مستقل").click(),
+  ]);
+  const status = bootstrapResponse.status();
+  const code = bootstrapResponse.ok()
+    ? "OK"
+    : (await bootstrapResponse.json()).code;
+  expect(
+    status,
+    `Demo bootstrap must succeed before checking customer controls: HTTP ${status} (${code})`,
+  ).toBe(200);
   await expect(button(page, "گفت‌وگوی تازه")).toBeVisible();
   return (await page.request.get("/api/v1/customer/session")).json();
 }
@@ -138,9 +153,7 @@ test("Tarvio real workflows preserve drafts, retries, persisted transitions, kno
       .locator(".messages-scroll")
       .getByText("پاسخ واقعی کارشناس در نمای تارویو", { exact: true }),
   ).toBeVisible();
-  await staff
-    .getByRole("button", { name: "در صف", exact: true })
-    .click();
+  await staff.getByRole("button", { name: "در صف", exact: true }).click();
   await expect(button(staff, `گفت‌وگو ${ref(c1)}`)).toBeVisible();
   await expect(button(staff, `گفت‌وگو ${ref(c2)}`)).not.toBeVisible();
   await staff.getByRole("link", { name: "دانش‌نامه", exact: true }).click();

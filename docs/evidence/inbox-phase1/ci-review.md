@@ -138,3 +138,26 @@ workflow passed: the broad Tarvio scenario stops early in the failing PR run.
 Historical raw log/CI trace retrieval remains blocked. Check annotations establish
 these new failure messages and suite outcomes, not network timelines or screenshots.
 The original per-failure comparison remains incomplete; do not claim it was inspected.
+
+
+## Follow-up integrated CI at d7f3504
+
+- [PR41203105529](https://github.com/aboumelon/support-desk/actions/runs/41203105529):
+  **30 passed,2 failed,1 existing conditional skip**. Tarvio broad flow never observed
+  the ephemeral `ai-draft` (20s); Tarvio responsive flow never reached the bootstrap
+  new-conversation control (5s).
+- [Push41203102124](https://github.com/aboumelon/support-desk/actions/runs/41203102124):
+  **30 passed,2 failed,1 existing conditional skip**. Both responsive and timeline
+  tests failed on bootstrap new-conversation control. Broad Tarvio test passed.
+- The corrected customer-entry test, standalone staff login and strengthened
+  authenticated staff navigation passed both. Foundation passed.
+
+AI-draft non-observation is another fast-provider race candidate: an ephemeral stream
+can finish before the browser renders it. Missing bootstrap controls now reproduced
+in CI, but the failed assertion alone does not reveal HTTP/bootstrap state. Both demo
+and public visitor entry share the same per-remote-identity session quota (5 per60s);
+several test bootstraps share the runner. That is an environment/test-isolation
+candidate, **not yet proven** by HTTP evidence. No quota or fixture is changed.
+Added an explicit bootstrap response/status assertion ahead of the unchanged visible-
+control assertion to distinguish rejected bootstrap from actual missing UI. Awaiting
+this diagnostic run. All original outcome expectations remain intact.
