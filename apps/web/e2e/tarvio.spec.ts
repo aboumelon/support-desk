@@ -1,6 +1,9 @@
-import { expect, test, type Page } from "@playwright/test";
+import { admitSession, expect, test, type Page } from "./fixtures";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { existsSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { randomUUID } from "node:crypto";
 
 const button = (page: Page, name: string) =>
   page.getByRole("button", { name, exact: true });
@@ -9,12 +12,42 @@ const message = (page: Page) =>
 const ref = (id: string) => id.slice(0, 8).toUpperCase();
 async function bootstrap(page: Page) {
   await page.goto("/demo");
-  await button(page, "شروع دموی مستقل").click();
+  const [bootstrapResponse] = await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        response.url().endsWith("/api/v1/public/demo") &&
+        response.request().method() === "POST",
+    ),
+    button(page, "شروع دموی مستقل").click(),
+  ]);
+  const status = bootstrapResponse.status();
+  const code = bootstrapResponse.ok()
+    ? "OK"
+    : (await bootstrapResponse.json()).code;
+  expect(
+    status,
+    `Demo bootstrap must succeed before checking customer controls: HTTP ${status} (${code})`,
+  ).toBe(200);
   await expect(button(page, "گفت‌وگوی تازه")).toBeVisible();
   return (await page.request.get("/api/v1/customer/session")).json();
 }
 async function fresh(page: Page) {
-  await button(page, "گفت‌وگوی تازه").click();
+  const [response] = await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        response.url().endsWith("/api/v1/customer/conversations"),
+    ),
+    button(page, "گفت‌وگوی تازه").click(),
+  ]);
+  expect(response.status()).toBe(200);
+  const created = await response.json();
+  // A visible old composer is not proof that creation/navigation has finished.
+  // In particular, do not gate reconciliation until the NEW initial snapshot loads.
+  await expect(page.locator(".reading-pane")).toHaveAttribute(
+    "aria-label",
+    `گفت‌وگو ${ref(created.id)}`,
+  );
   await expect(message(page)).toBeVisible();
 }
 async function send(page: Page, body: string) {
@@ -35,19 +68,85 @@ test("Tarvio real workflows preserve drafts, retries, persisted transitions, kno
   browser,
 }) => {
   test.setTimeout(180000);
+  const runSubscriptions = new Set<string>();
+  page.on("websocket", (socket) =>
+    socket.on("framereceived", ({ payload }) => {
+      const frame = JSON.parse(String(payload));
+      if (frame.type === "ai.run_changed")
+        runSubscriptions.add(frame.conversation_id);
+    }),
+  );
   const identity = await bootstrap(page),
     wid = identity.workspace_id;
   await fresh(page);
   const c1 = (
     await (await page.request.get("/api/v1/customer/conversations")).json()
   )[0].id;
-  await send(page, "How long is the Tarvio trial? Hand off this turn.");
-  await expect(page.getByTestId("ai-draft")).toBeVisible({ timeout: 20000 });
-  await button(page, "درخواست کارشناس").click();
-  await expect(page.getByTestId("ai-draft")).not.toBeVisible();
+  const barrier = process.env.E2E_BARRIER_DIR;
+  expect(barrier, "Start the dedicated test-only E2E worker").toBeTruthy();
+  const token = randomUUID().replaceAll("-", "");
+  const signal = (state: string) => join(barrier!, `${token}.${state}`);
+  writeFileSync(signal("arm"), "");
+  // Wait for a real Redis draft subscriber, not a guessed stream duration.
+  await expect(page.locator(".connection")).toHaveText("متصل");
   await expect
-    .poll(async () => (await snapshot(page, c1)).active_run?.status)
-    .toBe("superseded");
+    .poll(() =>
+      Number(
+        execFileSync(
+          fileURLToPath(
+            new URL("../../backend/.venv/bin/python", import.meta.url),
+          ),
+          [
+            "-c",
+            "import sys; from redis import Redis; from supportdesk.config import get_settings; print(Redis.from_url(get_settings().redis_url).pubsub_numsub('sd:draft:'+sys.argv[1])[0][1])",
+            wid,
+          ],
+          {
+            cwd: fileURLToPath(new URL("../../backend", import.meta.url)),
+            encoding: "utf8",
+          },
+        ),
+      ),
+    )
+    .toBeGreaterThan(0);
+  try {
+    await send(
+      page,
+      `How long is the Tarvio trial? Hand off this turn. [e2e-cancel:${token}]`,
+    );
+    await expect
+      .poll(() => existsSync(signal("ready")), { timeout: 20000 })
+      .toBe(true);
+    await expect
+      .poll(() => runSubscriptions.has(c1), { timeout: 20000 })
+      .toBe(true);
+    await expect(
+      page.locator(".responsibility-strip.state-generating"),
+    ).toBeVisible();
+    writeFileSync(signal("start"), "");
+    await expect
+      .poll(() => existsSync(signal("paused")), { timeout: 20000 })
+      .toBe(true);
+    await expect(page.getByTestId("ai-draft")).toBeVisible({ timeout: 20000 });
+    expect((await snapshot(page, c1)).active_run?.status).toBe("running");
+    await button(page, "درخواست کارشناس").click();
+    await expect(page.getByTestId("ai-draft")).not.toBeVisible();
+    await expect
+      .poll(async () => (await snapshot(page, c1)).active_run?.status)
+      .toBe("superseded");
+  } finally {
+    writeFileSync(signal("start"), "");
+    writeFileSync(signal("release"), "");
+  }
+  await expect
+    .poll(() => existsSync(signal("finished")), { timeout: 20000 })
+    .toBe(true);
+  expect(
+    existsSync(signal("timed-out")),
+    "Barrier must be explicitly released, never expire",
+  ).toBe(false);
+  // Assert again after the real worker/finalizer has resumed and exited.
+  expect((await snapshot(page, c1)).active_run?.status).toBe("superseded");
   expect(
     (await snapshot(page, c1)).messages.filter(
       (m: { sender_kind: string }) => m.sender_kind === "assistant",
@@ -108,9 +207,27 @@ test("Tarvio real workflows preserve drafts, retries, persisted transitions, kno
   );
   const retryBody =
     "How long is the Tarvio trial? Retry identity verification.";
-  await send(page, retryBody);
-  await expect(button(page, "تلاش دوباره")).toBeEnabled();
-  await button(page, "تلاش دوباره").click();
+  // A committed first send may otherwise be acknowledged by a realtime-triggered
+  // snapshot before the manual retry is clicked. Hold that *real* reconciliation
+  // response until a second POST is observed; no server result is fabricated.
+  let releaseReconciliation!: () => void;
+  const reconciliation = new Promise<void>((resolve) => {
+    releaseReconciliation = resolve;
+  });
+  const retrySnapshot = `**/api/v1/customer/conversations/${c2}/snapshot`;
+  await page.route(retrySnapshot, async (route) => {
+    await reconciliation;
+    await route.continue();
+  });
+  try {
+    await send(page, retryBody);
+    await expect(button(page, "تلاش دوباره")).toBeEnabled();
+    await button(page, "تلاش دوباره").click();
+    await expect.poll(() => attempts.length).toBeGreaterThanOrEqual(2);
+  } finally {
+    releaseReconciliation();
+  }
+  await page.unroute(retrySnapshot);
   await expect(button(page, "تلاش دوباره")).not.toBeVisible();
   expect(attempts.length).toBeGreaterThanOrEqual(2);
   expect(new Set(attempts).size).toBe(1);
@@ -138,9 +255,7 @@ test("Tarvio real workflows preserve drafts, retries, persisted transitions, kno
       .locator(".messages-scroll")
       .getByText("پاسخ واقعی کارشناس در نمای تارویو", { exact: true }),
   ).toBeVisible();
-  await staff
-    .getByRole("tab", { name: "در انتظار کارشناس", exact: true })
-    .click();
+  await staff.getByRole("button", { name: "در صف", exact: true }).click();
   await expect(button(staff, `گفت‌وگو ${ref(c1)}`)).toBeVisible();
   await expect(button(staff, `گفت‌وگو ${ref(c2)}`)).not.toBeVisible();
   await staff.getByRole("link", { name: "دانش‌نامه", exact: true }).click();
@@ -301,7 +416,10 @@ test("Tarvio real workflows preserve drafts, retries, persisted transitions, kno
     extraHTTPHeaders: { Origin: "http://localhost:5173" },
   });
   const other = await otherContext.newPage();
-  await other.request.post("/api/v1/public/demo");
+  const otherBootstrap = await admitSession(() =>
+    other.request.post("/api/v1/public/demo"),
+  );
+  expect(otherBootstrap.status()).toBe(200);
   await other.goto(`/app/${wid}/conversations/${c1}`);
   await expect(
     other.getByText("به این فضای کاری یا بخش دسترسی ندارید.", { exact: true }),

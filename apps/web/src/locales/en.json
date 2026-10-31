@@ -3,5 +3,10 @@
   "product": "Support desk",
   "demo": "Start isolated demo",
   "login": "Staff login",
-  "fixture": "Fixture mode \u2022 fictional data"
+  "fixture": "Fixture mode • fictional data",
+  "inboxFilter_open": "Open",
+  "inboxFilter_queue": "Queued",
+  "inboxFilter_mine": "Mine",
+  "inboxFilter_resolved": "Resolved",
+  "inboxBackShort": "Inbox"
 }

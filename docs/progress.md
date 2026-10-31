@@ -1,6 +1,88 @@
 # SupportDesk implementation progress
 
-Last updated: 2026-10-30 (Asia/Tehran). Authority: [original design](../supportdesk-system-design-v1.md).
+Last updated: 2026-10-31 (Asia/Tehran). Authority: [original design](../supportdesk-system-design-v1.md).
+
+## Phase 1 final CI stabilization (2026-10-31)
+
+- Follow-up5cea99b repetition caught a test-infrastructure gate-precondition bug in one
+  PR repetition (not AI cancellation): old composer visibility could precede new initial
+  snapshot loading. Strengthened `fresh()` to await creationHTTP200 and the exact new
+  conversation region before gating reconciliation. Original red result retained in the
+  stabilization record; latest-head full-suite/CSP verification is required before merge.
+
+
+- Runtime/test revision c246b92: real PR browser workflow41207300422 and push workflow
+  41207297090 both passed. Each ran the entire suite three times:32 passed/1 existing
+  conditional CSP skip per repetition, followed by the separate production-CSP test:
+  1 passed. Six consecutive full-suite cancellation checks passed; no429 failures.
+- Deterministic first-delta barrier exists only in guarded tests-only Celery entrypoint;
+  running→handoff→superseded is asserted before release, then superseded and zero
+  persisted assistant messages are reasserted after the real worker/finalizer exits.
+  Timeout is a failure, not a fallback. Production source/contracts/semantics unchanged.
+- Real public session admissions are paced13s apart across contexts, repeated suites
+  and CSP. No quota reset/bypass, identity spoof,429 retry, assertion relaxation or
+  additional skip. Lost-response/manual-retry scenario now explicitly gates snapshot
+  reconciliation until a second UI request is observed; persistence assertions retained.
+- Foundation passed. Local25 web unit tests/typecheck/lint plus3 barrier unit tests and
+  Ruff passed. Final follow-up is documentation only; latest PR checks remain the
+  authority for its head. No merge and no Phase2; PR stays draft for human review.
+- Root cause, production isolation, reproduction and exact observed run results:
+  [final stabilization record](evidence/inbox-phase1/stabilization.md). Historical raw
+  artifact downloads remain blocked; this does not negate the fresh integrated CI evidence.
+
+## Phase 1 CI / regression review (2026-10-31)
+
+- Reviewed main/PR Actions metadata; both exact parent and original PR fail the combined
+  browser step, but original raw logs/traces redirect to blocked download hosts. Do not
+  attribute individual failures as pre-existing without those artifacts.
+- Confirmed and fixed staff source readability regression at1200–1439: existing source
+  dialog now used below1440 for staff only, retaining customer policy and existing aside.
+  Four geometry tests failed before and pass after the minimal fix.
+- 23 fixture browser tests /25 unit tests plus typecheck/lint/build pass locally. Strengthened
+  the existing backend-integrated navigation flow and enabled GitHub assertion reporting;
+  fresh integrated CI and original-trace review remain gates. No assertions weakened,
+  tests skipped, provider fixtures modified, backend behavior changed or Phase 2 started.
+- Fresh integrated CI at698a3c7: both runs31 passed/1 failed/1 existing conditional skip.
+  Standalone staff login and strengthened authenticated route/resize/draft workflow
+  passed both. One run failed pre-existing AI timing (`superseded` vs `succeeded`),
+  the other a pre-existing early visitor-identity read (`/app/undefined/inbox`).
+  Strengthened customer-entry readiness/status/identity assertions without changing
+  fixtures or weakening expected URLs; AI expectation/config left untouched.
+- Final diagnostic CI at4881745 confirms missing customer controls follow demo
+  HTTP429 RATE_LIMITED, not a removed control. PR:30 passed/2 failed; push:29 passed/
+  3 failed, each with1 existing conditional CSP skip. Remaining failures are transient
+  AI stream/cancellation timing plus rejected shared-quota bootstraps. Authenticated
+  login, customer-entry identity fix and staff route/resize/draft checks pass both.
+  No quota bypass, provider-fixture swap or expectation weakening was introduced.
+  Full green backend suite, original trace review and production-CSP stage remain blockers.
+- Detailed classifications, main-CSS measurements and evidence limits:
+  [CI/regression investigation](evidence/inbox-phase1/ci-review.md). **Not cleared for merge.**
+
+## Phase 1 — responsive operator Inbox (2026-10-31)
+
+- Implements only the approved staff Inbox list/detail boundary (<1120px), persistent
+  desktop panes, and index widths 304px (1120–1439), 320px (1440–1599), 344px (1600+).
+  Inbox rail is 84px below 1440 and 92px above; mobile retains existing bottom navigation.
+- Staff filters are visible native pressed buttons in a labeled group, with 44px targets.
+  Existing filter request parameters and customer tab presentation are retained.
+- Staff query/filter/selection and anchor-based pane scroll use actor/workspace-scoped
+  session storage cleared by existing logout reset. Browser Back/Forward is handled;
+  panes stay mounted on resize. Existing composer and IndexedDB pending-send persistence,
+  routes, backend contracts and send/control functions are unchanged. Older transcript
+  history is rehydrated through the existing history function when needed for restoration.
+- Verification: 25 Vitest tests, typecheck, lint, production build and 15 focused Playwright
+  tests passed. Build emitted non-blocking Zod PURE-comment warnings. New browser-suite
+  setup initially had incorrect selectors and a too-short history fixture; corrected
+  fixture assumptions and reran the complete suite successfully.
+- **Evidence limitation:** browser tests/screenshots run the real React frontend with
+  intercepted deterministic API/session fixtures and stubbed realtime transport, not
+  a real authenticated backend. Docker/uv are unavailable. Existing backend-integrated
+  browser suites, real login/send/ownership/provider behavior and server-side persistence
+  were not verified here and remain review/release gates.
+- Fresh labeled screenshots and reproducible commands: [verification record](evidence/inbox-phase1/README.md).
+  Source inspector redesign, customer desktop layout and Knowledge proposals remain
+  deferred; their approved [design baseline](design/desktop-design-spec.md) is preserved.
+  No merge is authorized.
 
 ## Production Content Security Policy compliance for realtime schema validation (2026-10-30)
 

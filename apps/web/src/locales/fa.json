@@ -206,5 +206,10 @@
   "demoUnavailable": "دموی عمومی فعلاً در دسترس نیست.",
   "resourceLimit": "ظرفیت موقتاً تکمیل است. کمی بعد دوباره تلاش کنید.",
   "assistantDisabled": "دستیار فعلاً در دسترس نیست.",
-  "searchShort": "جست‌وجوی گفتگو"
+  "searchShort": "جست‌وجوی گفتگو",
+  "inboxFilter_open": "باز",
+  "inboxFilter_queue": "در صف",
+  "inboxFilter_mine": "با من",
+  "inboxFilter_resolved": "بسته‌شده",
+  "inboxBackShort": "فهرست"
 }

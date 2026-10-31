@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { createPublicSession, test, expect } from "./fixtures";
 test.use({ extraHTTPHeaders: { Origin: "http://localhost:5173" } });
 
 test("entry follows public capabilities and recovers without fictional fallback", async ({
@@ -48,9 +48,9 @@ test("inbox searches persisted content beyond its first page and settings redire
   page,
 }) => {
   await page.goto("/demo");
-  await page
-    .getByRole("button", { name: "شروع دموی مستقل", exact: true })
-    .click();
+  await createPublicSession(page, () =>
+    page.getByRole("button", { name: "شروع دموی مستقل", exact: true }).click(),
+  );
   await expect(page).toHaveURL(/\/workspace$/);
   const customer = await (
     await page.request.get("/api/v1/customer/session")

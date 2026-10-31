@@ -11,20 +11,61 @@ import {
 } from "./presentation";
 import type { useConversation } from "./use-conversation";
 import type { SourceSelection } from "./source-inspector";
+import { readPanePosition } from "./inbox-view";
+import { usePanePosition } from "./use-pane-position";
 export type ConversationState = ReturnType<typeof useConversation>;
 export function Timeline({
   state,
+  active = true,
   selection,
   onSource,
 }: {
   state: ConversationState;
+  active?: boolean;
   selection: SourceSelection | null;
   onSource: (messageId: string, label: string) => void;
 }) {
   const { t } = useTranslation();
   const viewport = useRef<HTMLDivElement>(null);
   const content = useRef<HTMLDivElement>(null);
-  const nearBottom = useRef(true);
+  const staff = state.scope.startsWith("staff:");
+  const positionScope = `${state.scope}:transcript`;
+  const initialPosition = useRef(
+    staff ? readPanePosition(positionScope) : null,
+  );
+  const nearBottom = useRef(initialPosition.current?.bottom ?? true);
+  const isActive = useRef(active);
+  isActive.current = active;
+  const anchor = initialPosition.current?.anchor;
+  const anchorMissing = Boolean(
+    anchor && !state.messages.some((message) => message.id === anchor),
+  );
+  const positionReady = !anchorMissing || !state.hasOlder;
+  const firstMessage = state.messages[0]?.id;
+  useEffect(() => {
+    // Rehydrate older history only when a saved reading anchor needs it. A failed
+    // page is not retried in a loop; the existing history control remains usable.
+    if (
+      staff &&
+      active &&
+      anchorMissing &&
+      state.hasOlder &&
+      !state.loadingOlder
+    )
+      void state.history();
+  }, [staff, active, firstMessage, anchorMissing]);
+  const rememberPosition = usePanePosition({
+    viewport,
+    scope: positionScope,
+    enabled: staff,
+    visible: active,
+    ready: positionReady,
+    anchorAttribute: "data-message-id",
+    onRestore: (bottom) => {
+      nearBottom.current = bottom;
+    },
+  });
+  const previousSignature = useRef("");
   const prepending = useRef<{ height: number; top: number } | null>(null);
   const [newMessages, setNewMessages] = useState(false);
   const persisted =
@@ -65,11 +106,11 @@ export function Timeline({
     const el = viewport.current;
     if (el) el.scrollTop = el.scrollHeight;
     setNewMessages(false);
-    void state.markRead();
+    if (active) void state.markRead();
   };
   useLayoutEffect(() => {
     const el = viewport.current;
-    if (!el) return;
+    if (!el || (staff && (!active || !positionReady))) return;
     if (prepending.current) {
       el.scrollTop =
         prepending.current.top + el.scrollHeight - prepending.current.height;
@@ -77,20 +118,21 @@ export function Timeline({
       return;
     }
     if (nearBottom.current) latest();
-    else setNewMessages(true);
-  }, [signature]);
+    else if (!staff || previousSignature.current) setNewMessages(true);
+    previousSignature.current = signature;
+  }, [signature, active, positionReady]);
   const markRead = useRef(state.markRead);
   markRead.current = state.markRead;
   useEffect(() => {
     const observer = new ResizeObserver(() => {
-      if (nearBottom.current) {
+      if (nearBottom.current && isActive.current) {
         const el = viewport.current;
         if (el) el.scrollTop = el.scrollHeight;
       }
     });
     if (content.current) observer.observe(content.current);
     const visible = () => {
-      if (nearBottom.current) void markRead.current();
+      if (nearBottom.current && isActive.current) void markRead.current();
     };
     document.addEventListener("visibilitychange", visible);
     return () => {
@@ -99,8 +141,8 @@ export function Timeline({
     };
   }, []);
   useEffect(() => {
-    if (nearBottom.current) void state.markRead();
-  }, [state.messages.at(-1)?.event_seq]);
+    if (nearBottom.current && active) void state.markRead();
+  }, [state.messages.at(-1)?.event_seq, active]);
   let previousDate = "";
   return (
     <div
@@ -108,7 +150,7 @@ export function Timeline({
       ref={viewport}
       onScroll={() => {
         const el = viewport.current;
-        if (!el) return;
+        if (!el || (staff && !rememberPosition())) return;
         nearBottom.current =
           el.scrollHeight - el.scrollTop - el.clientHeight < 80;
         if (nearBottom.current) {

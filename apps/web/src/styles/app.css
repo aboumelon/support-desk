@@ -2862,3 +2862,94 @@ body,
     display: none;
   }
 }
+
+/* Phase 1: operator Inbox only. Customer and Knowledge retain their policies.
+   Staff sources reuse the existing dialog below1440 to protect reading space. */
+.tarvio .inbox-workspace {
+  grid-template-columns: 84px minmax(0, 1fr);
+}
+.tarvio .staff-desk {
+  --inbox-index: 304px;
+  grid-template-columns: var(--inbox-index) minmax(0, 1fr);
+}
+.tarvio .staff-desk:has(> .source-inspector) {
+  grid-template-columns: var(--inbox-index) minmax(0, 1fr) 320px;
+}
+.tarvio .staff-desk .filters {
+  gap: 4px;
+  padding-inline: 12px;
+  flex-wrap: wrap;
+}
+.tarvio .staff-desk .filters button {
+  flex: 1 0 auto;
+  min-width: 44px;
+  min-height: 44px;
+  padding-inline: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.tarvio .staff-desk button:focus-visible,
+.tarvio .staff-desk input:focus-visible,
+.tarvio .staff-desk textarea:focus-visible {
+  outline: 3px solid var(--cobalt);
+  outline-offset: 2px;
+}
+.tarvio .staff-desk .inbox-back {
+  display: none;
+}
+@media (min-width: 1440px) {
+  .tarvio .inbox-workspace {
+    grid-template-columns: 92px minmax(0, 1fr);
+  }
+  .tarvio .staff-desk {
+    --inbox-index: 320px;
+  }
+}
+@media (min-width: 1600px) {
+  .tarvio .staff-desk {
+    --inbox-index: 344px;
+  }
+}
+@media (max-width: 1439px) {
+  .tarvio .staff-desk:has(> .source-inspector) {
+    grid-template-columns: var(--inbox-index) minmax(0, 1fr);
+  }
+}
+@media (max-width: 1119px) {
+  .tarvio .staff-desk,
+  .tarvio .staff-desk:has(> .source-inspector) {
+    display: block;
+  }
+  .tarvio .staff-desk .conversation-index,
+  .tarvio .staff-desk .reading-pane {
+    height: 100%;
+  }
+  .tarvio .staff-desk .conversation-index {
+    border-inline-end: 0;
+  }
+  .tarvio .staff-desk.mobile-detail .conversation-index,
+  .tarvio .staff-desk.mobile-list .reading-pane,
+  .tarvio .staff-desk.mobile-list .no-selection {
+    display: none;
+  }
+  .tarvio .staff-desk .inbox-back {
+    display: inline-flex;
+    align-items: center;
+    flex: none;
+    gap: 6px;
+    width: auto;
+    min-width: 44px;
+    min-height: 44px;
+    font: inherit;
+    font-size: 12px;
+    transform: none;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .tarvio .staff-desk .inbox-back .icon {
+    transform: none;
+  }
+}

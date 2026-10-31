@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { createPublicSession, expect, test } from "./fixtures";
 
 test("home customer entry connects to the fixed staff workspace", async ({
   page,
@@ -20,14 +20,21 @@ test("home customer entry connects to the fixed staff workspace", async ({
     ).toBe(false);
   }
   await page.setViewportSize({ width: 1440, height: 960 });
-  await entry.click();
+  await createPublicSession(page, () => entry.click());
   await expect(page).toHaveURL(/\/chat\/tarvio-demo$/);
-  const identity = await (
-    await page.request.get("/api/v1/customer/session")
-  ).json();
-  await page
-    .getByRole("button", { name: "گفت‌وگوی تازه", exact: true })
-    .click();
+  // Route commit precedes visitor-session creation. Wait for the authenticated
+  // customer UI before reading identity; otherwise a 401 body yields undefined
+  // workspace_id and incorrectly blames the later staff login navigation.
+  const create = page.getByRole("button", {
+    name: "گفت‌وگوی تازه",
+    exact: true,
+  });
+  await expect(create).toBeVisible();
+  const identityResponse = await page.request.get("/api/v1/customer/session");
+  expect(identityResponse.status()).toBe(200);
+  const identity = await identityResponse.json();
+  expect(identity.workspace_id).toMatch(/^[0-9a-f-]{36}$/i);
+  await create.click();
   await expect(
     page.getByRole("textbox", { name: "پیام", exact: true }),
   ).toBeVisible();

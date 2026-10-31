@@ -3,6 +3,11 @@ import { existsSync } from "node:fs";
 export default defineConfig({
   testDir: "e2e",
   workers: 1,
+  outputDir: process.env.PLAYWRIGHT_OUTPUT_DIR ?? "test-results",
+  // Keep normal logs and expose assertion details through GitHub check annotations.
+  // Reporting only: no retries, skips, timeouts or expected outcomes are changed.
+  reporter:
+    process.env.GITHUB_ACTIONS === "true" ? [["line"], ["github"]] : undefined,
   timeout: 60000,
   use: {
     baseURL: "http://localhost:5173",

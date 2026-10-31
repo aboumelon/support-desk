@@ -275,7 +275,9 @@ function Workspace() {
       ? "settings"
       : "inbox";
   return (
-    <main className="workspace-shell">
+    <main
+      className={`workspace-shell ${section === "inbox" ? "inbox-workspace" : ""}`}
+    >
       <Rail
         session={scoped!}
         customer={customer.data}
