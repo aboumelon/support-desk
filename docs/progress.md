@@ -20,6 +20,13 @@ Last updated: 2026-10-31 (Asia/Tehran). Authority: [original design](../supportd
   the other a pre-existing early visitor-identity read (`/app/undefined/inbox`).
   Strengthened customer-entry readiness/status/identity assertions without changing
   fixtures or weakening expected URLs; AI expectation/config left untouched.
+- Final diagnostic CI at4881745 confirms missing customer controls follow demo
+  HTTP429 RATE_LIMITED, not a removed control. PR:30 passed/2 failed; push:29 passed/
+  3 failed, each with1 existing conditional CSP skip. Remaining failures are transient
+  AI stream/cancellation timing plus rejected shared-quota bootstraps. Authenticated
+  login, customer-entry identity fix and staff route/resize/draft checks pass both.
+  No quota bypass, provider-fixture swap or expectation weakening was introduced.
+  Full green backend suite, original trace review and production-CSP stage remain blockers.
 - Detailed classifications, main-CSS measurements and evidence limits:
   [CI/regression investigation](evidence/inbox-phase1/ci-review.md). **Not cleared for merge.**
 

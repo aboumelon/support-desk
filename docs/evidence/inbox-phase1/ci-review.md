@@ -37,9 +37,9 @@ download them, or attachment of their extracted logs/error contexts/traces here.
 | Item | Classification / confidence | Evidence and action |
 | --- | --- | --- |
 | Staff source layout at 1200–1439px | **New regression, confirmed and fixed** | Actual frontend geometry plus main-CSS comparison; see measurements below. Reuse existing staff source dialog below1440. |
-| Staff login navigation concern | **Unclassified CI failure pending logs**; no new frontend navigation regression reproduced | Login component byte-identical to baseline. New synthetic login→Inbox→detail→Back check passes; existing real workflow strengthened, awaiting backend CI. Backend credentials, rate limiting, Origin and cookies not verified locally. |
-| `superseded` vs `succeeded` concern | **Test race candidate**, not a confirmed CI diagnosis | Existing test waits for an AI draft then clicks handoff. Fake provider defaults to `normal` (10ms chunks), while documented browser regression command requires `FAKE_SCENARIO=slow` (150ms). CI does not set it. Only queued/running runs are superseded; an already succeeded run is correctly not rewritten. All relevant backend/test/workflow code predates Phase 1. No backend behavior, provider fixtures or assertions changed. |
-| Missing new-conversation control concern | **Unclassified CI failure pending trace/HTTP evidence** | Control remains customer-only; staff cannot create conversations. Customer desktop list has control; narrow detail intentionally hides list until Back. New fixture checks at390/1365 pass creation navigation. Cannot infer CI cause (wrong audience/failed bootstrap/rate limit/etc.) without trace. |
+| Staff login navigation concern | **Pre-existing test synchronization race**, fixed; see fresh-CI sections | Login component byte-identical to baseline. New synthetic login→Inbox→detail→Back check passes; existing real workflow strengthened, awaiting backend CI. Backend credentials, rate limiting, Origin and cookies not verified locally. |
+| `superseded` vs `succeeded` concern | **Pre-existing test flakiness/race**, reproduced in fresh CI | Existing test waits for an AI draft then clicks handoff. Fake provider defaults to `normal` (10ms chunks), while documented browser regression command requires `FAKE_SCENARIO=slow` (150ms). CI does not set it. Only queued/running runs are superseded; an already succeeded run is correctly not rewritten. All relevant backend/test/workflow code predates Phase 1. No backend behavior, provider fixtures or assertions changed. |
+| Missing new-conversation control concern | **Test infrastructure/environment**, confirmed rejected bootstrap (HTTP429) | Control remains customer-only; staff cannot create conversations. Customer desktop list has control; narrow detail intentionally hides list until Back. New fixture checks at390/1365 pass creation navigation. Cannot infer CI cause (wrong audience/failed bootstrap/rate limit/etc.) without trace. |
 | Historical main browser-flow failure | **Pre-existing CI failure at run level only**, individual defect(s) unknown | Exact parent already fails the combined browser step; no assertion-level attribution possible from metadata. |
 | Historical log/artifact retrieval | **Review environment issue, confirmed** | Redirect hosts blocked; not evidence that GitHub's runner environment caused the E2E failures. |
 
@@ -161,3 +161,48 @@ candidate, **not yet proven** by HTTP evidence. No quota or fixture is changed.
 Added an explicit bootstrap response/status assertion ahead of the unchanged visible-
 control assertion to distinguish rejected bootstrap from actual missing UI. Awaiting
 this diagnostic run. All original outcome expectations remain intact.
+
+
+## Final diagnostic result at 4881745 and merge decision
+
+[PR run41203389410](https://github.com/aboumelon/support-desk/actions/runs/41203389410)
+(job124543517063): **30 passed,2 failed,1 existing conditional skip**.
+[Push run41203385403](https://github.com/aboumelon/support-desk/actions/runs/41203385403)
+(job124543504885): **29 passed,3 failed,1 existing conditional skip**.
+
+The new, stricter bootstrap assertion reports **HTTP429 (`RATE_LIMITED`)** in the
+responsive test in both runs and in the timeline test in the push run. Thus the missing
+new-conversation control is **test infrastructure/environment: rejected demo bootstrap**,
+not evidence that Phase1 removed a customer control. The pre-existing5-per60s shared
+session quota and shared runner identity explain why suite pacing can affect admission;
+no rate limit or session fixture is bypassed, reset or relaxed here. Exact prior-run
+HTTP timelines still require the inaccessible traces. Changing suite timing can expose
+this existing coupling, so added fixture tests are not assumed irrelevant to pacing.
+
+The broad Tarvio scenario fails on a never-observed `ai-draft` in the PR run and on
+`succeeded` instead of `superseded` in the push run. Its existing fast-stream/cancellation
+race remains. Same-code pass/fail evidence is recorded above; the exact provider/network
+ordering is not inferred as if a trace had been inspected.
+
+The customer-entry readiness fix, standalone staff login, real authenticated staff
+Inbox navigation/resize/draft assertions and all23 frontend fixture checks passed in
+both diagnostic runs. No further runtime code changed after698a3c7; subsequent changes
+are stronger test synchronization/status assertions and documentation.
+
+**Merge decision: BLOCKED.** No Phase2 and no merge. Before clearing the PR:
+
+1. Obtain original main/PR logs and Playwright traces (or attach extracted artifacts)
+   to complete the historical assertion-level comparison; egress currently prevents it.
+2. Make cancellation/ephemeral-stream coverage deterministic without accepting
+   `succeeded`, skipping the scenario or changing backend run-finalization semantics.
+   Any provider/test-environment setup must preserve the intended cancellation contract
+   and be justified separately rather than silently swapping fixtures for green CI.
+3. Provide rate-limit-aware/isolation-safe backend test orchestration that keeps real
+   production quotas intact; prove successful demo bootstrap before UI assertions.
+4. Rerun the full backend suite and then the separate production-CSP stage; the latter
+   has not run because the earlier suite fails.
+
+Local final checks:23 fixture browser tests,25 unit tests, typecheck/lint pass again;
+production build passed after the runtime fix (only third-party Zod comment warnings).
+The final follow-up commit is documentation only; statuses above identify the exact
+runtime/test revision tested, not a claim of a green latest-head workflow.

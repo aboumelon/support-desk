@@ -36,9 +36,10 @@ provider behavior, durable server state and production-browser integration remai
 
 No source-inspector lifecycle, real citation retrieval, customer workflow or Knowledge
 browser regression is claimed. New CSS is limited to `.staff-desk` / `.inbox-workspace`;
-shared Timeline preservation is staff-gated. Existing source inspector breakpoint and
-lifecycle remain unchanged, while its grid no longer contracts the staff index.
-The later approved source-dialog/aside policy is deliberately not implemented here.
+shared Timeline preservation is staff-gated. At initial implementation, the source policy was unchanged. The focused CI review
+subsequently corrected the staff breakpoint to reuse the existing dialog below1440;
+see the linked investigation. Customer source behavior and other source redesigns
+remain unchanged/deferred.
 
 ## Screenshots
 
