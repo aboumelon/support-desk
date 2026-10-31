@@ -17,6 +17,10 @@ jobs:
         image: redis:8.0.2-alpine
         ports: ["56379:6379"]
     env:
+      APP_ENV: test
+      LLM_PROVIDER: fake
+      E2E_BARRIER_DIR: /tmp/supportdesk-e2e-barriers
+      E2E_QUOTA_LEDGER: /tmp/supportdesk-e2e-admission/last-completed
       UV_CACHE_DIR: /tmp/supportdesk-uv-cache
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.local/playwright
       ALLOWED_ORIGINS: '["http://localhost:5173","http://localhost:5184"]'
@@ -41,9 +45,14 @@ jobs:
         working-directory: apps/backend
       - run: |
           mkdir -p .local
-          nohup bash scripts/dev.sh >.local/dev.log 2>&1 &
+          nohup bash scripts/e2e-dev.sh >.local/dev.log 2>&1 &
           uv run --project apps/backend --all-extras python -m supportdesk.cli.wait_demo
-          pnpm --filter @supportdesk/web test:e2e
+      - name: Full integrated browser suite (1/3)
+        run: PLAYWRIGHT_OUTPUT_DIR=test-results/full-1 pnpm --filter @supportdesk/web test:e2e
+      - name: Full integrated browser suite (2/3)
+        run: PLAYWRIGHT_OUTPUT_DIR=test-results/full-2 pnpm --filter @supportdesk/web test:e2e
+      - name: Full integrated browser suite (3/3)
+        run: PLAYWRIGHT_OUTPUT_DIR=test-results/full-3 pnpm --filter @supportdesk/web test:e2e
       - name: Verify production build with the Caddy CSP
         run: |
           pnpm build
@@ -52,7 +61,7 @@ jobs:
             if curl --fail --silent http://localhost:5184/ >/dev/null; then break; fi
             sleep 1
           done
-          CSP_BASE_URL=http://localhost:5184 pnpm --filter @supportdesk/web test:e2e e2e/production-csp.spec.ts
+          PLAYWRIGHT_OUTPUT_DIR=test-results/csp CSP_BASE_URL=http://localhost:5184 pnpm --filter @supportdesk/web test:e2e e2e/production-csp.spec.ts
       - uses: actions/upload-artifact@v4
         if: always()
         with:

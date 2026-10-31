@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures";
 test.use({ extraHTTPHeaders: { Origin: "http://localhost:5173" } });
 
 test("entry follows public capabilities and recovers without fictional fallback", async ({

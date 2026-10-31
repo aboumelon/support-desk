@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { paceSessionCreation, test, expect } from "./fixtures";
 
 test("isolated customer and operator complete persistent assistant and human chat", async ({
   browser,
@@ -160,6 +160,7 @@ test("isolated customer and operator complete persistent assistant and human cha
   const customerContext = await browser.newContext({
     baseURL: "http://localhost:5173",
   });
+  await paceSessionCreation(customerContext);
   const customer = await customerContext.newPage();
   await customer.goto(`/chat/${details.public_key}`);
   await customer

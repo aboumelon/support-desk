@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures";
 
 test("home customer entry connects to the fixed staff workspace", async ({
   page,

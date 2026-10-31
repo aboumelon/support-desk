@@ -206,3 +206,43 @@ Local final checks:23 fixture browser tests,25 unit tests, typecheck/lint pass a
 production build passed after the runtime fix (only third-party Zod comment warnings).
 The final follow-up commit is documentation only; statuses above identify the exact
 runtime/test revision tested, not a claim of a green latest-head workflow.
+
+## Final stabilization mechanism (results pending)
+
+The cancellation scenario now uses an explicit IPC barrier installed **only** by
+`tests.e2e_worker:app` in the dedicated `scripts/e2e-dev.sh` stack. Normal application,
+provider, development-worker and production-worker entrypoints are unchanged. The
+backend Docker image copies `src/` only, not `tests/`; test controls are not packaged.
+Installation rejects anything except APP_ENV=test with LLM_PROVIDER=fake and an explicit
+private IPC directory. No HTTP control endpoint, backend schema, cancellation or quota
+setting is added. A random per-attempt marker also requires a matching local arm file.
+
+Ordering: the test waits for a connected websocket and real Redis draft subscriber;
+the ordinary fake provider emits its first delta; the ordinary generation loop consumes
+and publishes it; on the next iterator request the wrapper records `paused` and waits
+for `release`. The test requires both that signal and visible provisional output, then
+requires the active run to be **running** before clicking the real handoff button.
+It retains the exact **superseded** expectation. Finally it releases the provider even
+on assertion failure. A separate signal is written after the original generation and
+finalization transactions return; only then does the test again require superseded and
+zero persisted assistant messages. Thus it tests the real epoch/lease/finalization fence,
+not a shortcut returning a fabricated cancelled result. Missing release times out and
+fails closed; it never automatically resumes into a successful answer.
+
+Real-backend tests now share a serial admission ledger across browser contexts, direct
+API bootstrap, three full-suite invocations and CSP verification. After each public
+visitor/demo admission completes (including failures), at least13 seconds must elapse
+before another starts: at most5 admissions per any60-second interval. This is documented
+quota-aware orchestration, not an assertion sleep. The real HTTP request still reaches
+the unchanged rate limiter; errors are forwarded without retry and the explicit HTTP200
+bootstrap assertions remain. Client identities, cookies and quota rows are not spoofed,
+reset or reused across unrelated tests. One worker is required; fresh CI runners each
+have their own database and ledger. The ledger is private/ignored and must not be shared
+with unrelated production traffic. Tests without the required ledger/barrier fail rather
+than silently running a different scenario.
+
+CI runs the **entire** suite in three separately named steps against the same stack,
+then the separate built-production CSP verification. Each invocation retains its own
+trace/output directory. Local standard-library barrier tests cover guards, pause/release
+and timeout. Integrated results will be recorded below; this section alone is not a
+claim of successful CI.

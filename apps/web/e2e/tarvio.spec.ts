@@ -1,6 +1,9 @@
-import { expect, test, type Page } from "@playwright/test";
+import { admitSession, expect, test, type Page } from "./fixtures";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { existsSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { randomUUID } from "node:crypto";
 
 const button = (page: Page, name: string) =>
   page.getByRole("button", { name, exact: true });
@@ -56,13 +59,56 @@ test("Tarvio real workflows preserve drafts, retries, persisted transitions, kno
   const c1 = (
     await (await page.request.get("/api/v1/customer/conversations")).json()
   )[0].id;
-  await send(page, "How long is the Tarvio trial? Hand off this turn.");
-  await expect(page.getByTestId("ai-draft")).toBeVisible({ timeout: 20000 });
-  await button(page, "درخواست کارشناس").click();
-  await expect(page.getByTestId("ai-draft")).not.toBeVisible();
+  const barrier = process.env.E2E_BARRIER_DIR;
+  expect(barrier, "Start the dedicated test-only E2E worker").toBeTruthy();
+  const token = randomUUID().replaceAll("-", "");
+  const signal = (state: string) => join(barrier!, `${token}.${state}`);
+  writeFileSync(signal("arm"), "");
+  // Wait for a real Redis draft subscriber, not a guessed stream duration.
+  await expect(page.locator(".connection")).toHaveText("متصل");
   await expect
-    .poll(async () => (await snapshot(page, c1)).active_run?.status)
-    .toBe("superseded");
+    .poll(() =>
+      Number(
+        execFileSync(
+          fileURLToPath(
+            new URL("../../backend/.venv/bin/python", import.meta.url),
+          ),
+          [
+            "-c",
+            "import sys; from redis import Redis; from supportdesk.config import get_settings; print(Redis.from_url(get_settings().redis_url).pubsub_numsub('sd:draft:'+sys.argv[1])[0][1])",
+            wid,
+          ],
+          {
+            cwd: fileURLToPath(new URL("../../backend", import.meta.url)),
+            encoding: "utf8",
+          },
+        ),
+      ),
+    )
+    .toBeGreaterThan(0);
+  try {
+    await send(
+      page,
+      `How long is the Tarvio trial? Hand off this turn. [e2e-cancel:${token}]`,
+    );
+    await expect
+      .poll(() => existsSync(signal("paused")), { timeout: 20000 })
+      .toBe(true);
+    await expect(page.getByTestId("ai-draft")).toBeVisible({ timeout: 20000 });
+    expect((await snapshot(page, c1)).active_run?.status).toBe("running");
+    await button(page, "درخواست کارشناس").click();
+    await expect(page.getByTestId("ai-draft")).not.toBeVisible();
+    await expect
+      .poll(async () => (await snapshot(page, c1)).active_run?.status)
+      .toBe("superseded");
+  } finally {
+    writeFileSync(signal("release"), "");
+  }
+  await expect
+    .poll(() => existsSync(signal("finished")), { timeout: 20000 })
+    .toBe(true);
+  // Assert again after the real worker/finalizer has resumed and exited.
+  expect((await snapshot(page, c1)).active_run?.status).toBe("superseded");
   expect(
     (await snapshot(page, c1)).messages.filter(
       (m: { sender_kind: string }) => m.sender_kind === "assistant",
@@ -314,7 +360,10 @@ test("Tarvio real workflows preserve drafts, retries, persisted transitions, kno
     extraHTTPHeaders: { Origin: "http://localhost:5173" },
   });
   const other = await otherContext.newPage();
-  await other.request.post("/api/v1/public/demo");
+  const otherBootstrap = await admitSession(() =>
+    other.request.post("/api/v1/public/demo"),
+  );
+  expect(otherBootstrap.status()).toBe(200);
   await other.goto(`/app/${wid}/conversations/${c1}`);
   await expect(
     other.getByText("به این فضای کاری یا بخش دسترسی ندارید.", { exact: true }),

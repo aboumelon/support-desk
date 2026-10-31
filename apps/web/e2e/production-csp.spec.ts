@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Page } from "./fixtures";
 
 const baseURL = process.env.CSP_BASE_URL;
 test.use({ baseURL: baseURL ?? "http://localhost:5184" });
