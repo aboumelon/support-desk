@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "./fixtures";
+import { createPublicSession, expect, test, type Page } from "./fixtures";
 
 const baseURL = process.env.CSP_BASE_URL;
 test.use({ baseURL: baseURL ?? "http://localhost:5184" });
@@ -22,9 +22,9 @@ test("workspace reload and human realtime chat obey the production CSP", async (
   const policy = response?.headers()["content-security-policy"];
   expect(policy).toContain("script-src 'self'");
   expect(policy).not.toContain("unsafe-eval");
-  await page
-    .getByRole("button", { name: "شروع دموی مستقل", exact: true })
-    .click();
+  await createPublicSession(page, () =>
+    page.getByRole("button", { name: "شروع دموی مستقل", exact: true }).click(),
+  );
   await expect(page).toHaveURL(/\/workspace$/);
   await page.reload();
   await page

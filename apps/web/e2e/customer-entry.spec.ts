@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures";
+import { createPublicSession, expect, test } from "./fixtures";
 
 test("home customer entry connects to the fixed staff workspace", async ({
   page,
@@ -20,7 +20,7 @@ test("home customer entry connects to the fixed staff workspace", async ({
     ).toBe(false);
   }
   await page.setViewportSize({ width: 1440, height: 960 });
-  await entry.click();
+  await createPublicSession(page, () => entry.click());
   await expect(page).toHaveURL(/\/chat\/tarvio-demo$/);
   // Route commit precedes visitor-session creation. Wait for the authenticated
   // customer UI before reading identity; otherwise a 401 body yields undefined

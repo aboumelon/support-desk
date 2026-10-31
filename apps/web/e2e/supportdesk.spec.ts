@@ -1,13 +1,18 @@
-import { paceSessionCreation, test, expect } from "./fixtures";
+import {
+  createPublicSession,
+  paceSessionCreation,
+  test,
+  expect,
+} from "./fixtures";
 
 test("isolated customer and operator complete persistent assistant and human chat", async ({
   browser,
   page,
 }) => {
   await page.goto("/demo");
-  await page
-    .getByRole("button", { name: "شروع دموی مستقل", exact: true })
-    .click();
+  await createPublicSession(page, () =>
+    page.getByRole("button", { name: "شروع دموی مستقل", exact: true }).click(),
+  );
   await page
     .getByRole("button", { name: "گفت‌وگوی تازه", exact: true })
     .click();
@@ -162,7 +167,9 @@ test("isolated customer and operator complete persistent assistant and human cha
   });
   await paceSessionCreation(customerContext);
   const customer = await customerContext.newPage();
-  await customer.goto(`/chat/${details.public_key}`);
+  await createPublicSession(customer, () =>
+    customer.goto(`/chat/${details.public_key}`),
+  );
   await customer
     .getByRole("button", { name: "گفت‌وگوی تازه", exact: true })
     .click();

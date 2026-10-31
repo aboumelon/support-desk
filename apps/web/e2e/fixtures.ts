@@ -1,7 +1,12 @@
-import { test as base, type BrowserContext } from "@playwright/test";
+import {
+  test as base,
+  expect,
+  type Page,
+  type BrowserContext,
+} from "@playwright/test";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname } from "node:path";
-export { expect, type Page } from "@playwright/test";
+export { expect, type Page };
 
 // Five public visitor/demo admissions per 60s share the runner's real identity.
 // Pace successful attempts >=13s apart, including across suite/CSP invocations.
@@ -45,6 +50,27 @@ export async function paceSessionCreation(context: BrowserContext) {
       });
     },
   );
+}
+// Await real admission (including quota scheduling) before asserting route/UI readiness.
+export async function createPublicSession(
+  page: Page,
+  action: () => Promise<unknown>,
+) {
+  const [response] = await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        /\/api\/v1\/public\/(demo|workspaces\/[^/]+\/visitor-sessions)$/.test(
+          new URL(response.url()).pathname,
+        ),
+    ),
+    action(),
+  ]);
+  const code = response.ok() ? "OK" : (await response.json()).code;
+  expect(
+    response.status(),
+    `Public session bootstrap: HTTP ${response.status()} (${code})`,
+  ).toBe(200);
 }
 export const test = base.extend({
   context: async ({ context }, use) => {
